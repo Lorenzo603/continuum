@@ -41,18 +41,18 @@ export async function createCard(data: {
   // Check if there's already an editable card and mark it non-editable
   const existingEditable = await getLatestCard(data.streamId);
 
-  // Use a transaction to ensure atomicity
-  return db.transaction(async (tx) => {
+  // better-sqlite3 transactions are synchronous
+  return db.transaction((tx) => {
     if (existingEditable) {
-      await tx
-        .update(cards)
+      tx.update(cards)
         .set({ isEditable: false })
-        .where(eq(cards.id, existingEditable.id));
+        .where(eq(cards.id, existingEditable.id))
+        .run();
     }
 
     const version = existingEditable ? existingEditable.version + 1 : 1;
 
-    const result = await tx
+    const result = tx
       .insert(cards)
       .values({
         id,
@@ -62,9 +62,10 @@ export async function createCard(data: {
         isEditable: true,
         metadata: data.metadata ?? null,
       })
-      .returning();
+      .returning()
+      .get();
 
-    return result[0];
+    return result;
   });
 }
 
@@ -82,14 +83,14 @@ export async function updateCard(
 
   const newId = uuid();
 
-  // Transaction: mark current card as non-editable, create new version
-  return db.transaction(async (tx) => {
-    await tx
-      .update(cards)
+  // better-sqlite3 transactions are synchronous
+  return db.transaction((tx) => {
+    tx.update(cards)
       .set({ isEditable: false })
-      .where(eq(cards.id, cardId));
+      .where(eq(cards.id, cardId))
+      .run();
 
-    const result = await tx
+    const result = tx
       .insert(cards)
       .values({
         id: newId,
@@ -99,8 +100,9 @@ export async function updateCard(
         isEditable: true,
         metadata: data.metadata ?? existingCard.metadata,
       })
-      .returning();
+      .returning()
+      .get();
 
-    return result[0];
+    return result;
   });
 }

@@ -31,7 +31,7 @@ export function StreamBoard() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       {streams.map((stream) => (
         <StreamTree key={stream.id} node={stream} onDelete={deleteStream} />
       ))}
@@ -44,7 +44,7 @@ export function StreamBoard() {
       ) : (
         <button
           onClick={() => setCreatingStream(true)}
-          className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted transition-colors hover:border-primary hover:text-primary"
+          className="mt-1 flex items-center gap-2 rounded-xl border-2 border-dashed border-border/50 px-4 py-3.5 text-sm text-muted transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
         >
           <svg
             className="h-4 w-4"
@@ -87,7 +87,7 @@ function StreamTree({
         onDelete={() => onDelete(node.id)}
       />
       {hasChildren && isExpanded && (
-        <div className="ml-6 border-l-2 border-border pl-4 mt-1 flex flex-col gap-2">
+        <div className="ml-5 border-l-2 border-primary/15 pl-4 mt-2 flex flex-col gap-3">
           {node.children.map((child) => (
             <StreamTree key={child.id} node={child} onDelete={onDelete} />
           ))}

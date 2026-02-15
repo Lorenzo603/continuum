@@ -60,3 +60,25 @@ body {
 .stream-cards-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted);
 }
+
+/* Forced dark mode via class (system preference handled by media query above) */
+html.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --color-border: #27272a;
+  --color-card: #18181b;
+  --color-card-hover: #1f1f23;
+  --color-surface: #111113;
+  --color-muted: #a1a1aa;
+}
+
+/* Card scroll snap on mobile */
+@media (max-width: 640px) {
+  .stream-cards-scroll {
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .stream-cards-scroll > * {
+    scroll-snap-align: start;
+  }
+}

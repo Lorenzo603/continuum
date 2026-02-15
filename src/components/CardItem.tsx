@@ -47,10 +47,10 @@ export const CardItem = memo(function CardItem({
 
   return (
     <div
-      className={`group/card relative min-w-[280px] max-w-[320px] flex-shrink-0 rounded-lg border transition-all ${
+      className={`group/card relative min-w-[280px] max-w-[320px] flex-shrink-0 rounded-xl border transition-all duration-200 ${
         card.isEditable
-          ? "border-primary/40 bg-card shadow-sm hover:shadow-md"
-          : "border-border bg-card/60 opacity-80"
+          ? "border-primary/30 bg-card shadow-md shadow-primary/5 hover:shadow-lg hover:shadow-primary/10"
+          : "border-border/40 bg-card/40"
       }`}
     >
       <div className="p-3">

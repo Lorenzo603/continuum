@@ -5,6 +5,8 @@ interface CardState {
   cardsByStream: Record<string, Card[]>;
   loading: Record<string, boolean>;
   error: string | null;
+  /** Internal mutation counter per stream — prevents stale fetches from overwriting mutation results */
+  _mutationVersion: Record<string, number>;
 
   fetchCards: (streamId: string) => Promise<void>;
   createCard: (
@@ -24,20 +26,34 @@ export const useCardStore = create<CardState>((set, get) => ({
   cardsByStream: {},
   loading: {},
   error: null,
+  _mutationVersion: {},
 
   fetchCards: async (streamId) => {
+    // Skip if we already have data for this stream (prevents StrictMode double-fetch race)
+    if (get().cardsByStream[streamId] !== undefined) return;
+
+    const versionAtStart = get()._mutationVersion[streamId] ?? 0;
     set((state) => ({
       loading: { ...state.loading, [streamId]: true },
       error: null,
     }));
     try {
-      const res = await fetch(`/api/streams/${streamId}/cards`);
+      const res = await fetch(`/api/streams/${streamId}/cards`, {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error("Failed to fetch cards");
       const data = await res.json();
-      set((state) => ({
-        cardsByStream: { ...state.cardsByStream, [streamId]: data },
-        loading: { ...state.loading, [streamId]: false },
-      }));
+      // Only write if no mutation happened during the fetch
+      if ((get()._mutationVersion[streamId] ?? 0) === versionAtStart) {
+        set((state) => ({
+          cardsByStream: { ...state.cardsByStream, [streamId]: data },
+          loading: { ...state.loading, [streamId]: false },
+        }));
+      } else {
+        set((state) => ({
+          loading: { ...state.loading, [streamId]: false },
+        }));
+      }
     } catch (error) {
       set((state) => ({
         loading: { ...state.loading, [streamId]: false },
@@ -48,6 +64,8 @@ export const useCardStore = create<CardState>((set, get) => ({
 
   createCard: async (streamId, content, metadata = null) => {
     const prev = get().cardsByStream[streamId] ?? [];
+    // Bump mutation version to invalidate any in-flight fetchCards
+    const nextVersion = (get()._mutationVersion[streamId] ?? 0) + 1;
     // Optimistic: add a temporary card
     const optimisticCard: Card = {
       id: `temp-${Date.now()}`,
@@ -62,6 +80,7 @@ export const useCardStore = create<CardState>((set, get) => ({
       c.isEditable ? { ...c, isEditable: false as const } : c
     );
     set((state) => ({
+      _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
       cardsByStream: {
         ...state.cardsByStream,
         [streamId]: [...optimisticCards, optimisticCard],
@@ -75,10 +94,20 @@ export const useCardStore = create<CardState>((set, get) => ({
         body: JSON.stringify({ streamId, content, metadata }),
       });
       if (!res.ok) throw new Error("Failed to create card");
-      // Refetch actual cards from server
-      await get().fetchCards(streamId);
+      const newCard: Card = await res.json();
+
+      // Replace the optimistic temp card with the real server card
+      set((state) => {
+        const current = state.cardsByStream[streamId] ?? [];
+        const updated = current.map((c) =>
+          c.id === optimisticCard.id ? newCard : c
+        );
+        return {
+          cardsByStream: { ...state.cardsByStream, [streamId]: updated },
+        };
+      });
     } catch (error) {
-      // Rollback
+      // Rollback on POST failure
       set((state) => ({
         cardsByStream: { ...state.cardsByStream, [streamId]: prev },
         error:
@@ -89,6 +118,8 @@ export const useCardStore = create<CardState>((set, get) => ({
 
   updateCard: async (cardId, streamId, content, metadata = null) => {
     const prev = get().cardsByStream[streamId] ?? [];
+    // Bump mutation version to invalidate any in-flight fetchCards
+    const nextVersion = (get()._mutationVersion[streamId] ?? 0) + 1;
     // Optimistic: mark current card non-editable, and add new version
     const currentCard = prev.find((c) => c.id === cardId);
     if (!currentCard) return;
@@ -109,6 +140,7 @@ export const useCardStore = create<CardState>((set, get) => ({
       optimisticNew,
     ];
     set((state) => ({
+      _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
       cardsByStream: { ...state.cardsByStream, [streamId]: optimisticCards },
     }));
 
@@ -119,7 +151,18 @@ export const useCardStore = create<CardState>((set, get) => ({
         body: JSON.stringify({ content, metadata }),
       });
       if (!res.ok) throw new Error("Failed to update card");
-      await get().fetchCards(streamId);
+      const newCard: Card = await res.json();
+
+      // Replace the optimistic temp card with the real server card
+      set((state) => {
+        const current = state.cardsByStream[streamId] ?? [];
+        const updated = current.map((c) =>
+          c.id === optimisticNew.id ? newCard : c
+        );
+        return {
+          cardsByStream: { ...state.cardsByStream, [streamId]: updated },
+        };
+      });
     } catch (error) {
       set((state) => ({
         cardsByStream: { ...state.cardsByStream, [streamId]: prev },

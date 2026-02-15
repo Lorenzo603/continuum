@@ -7,7 +7,89 @@ import { useUIStore } from "@/stores/uiStore";
 import { CardItem } from "./CardItem";
 import { CardEditor } from "./CardEditor";
 import { NewStreamForm } from "./NewStreamForm";
-import type { StreamNode } from "@/types";
+import type { StreamNode, Card } from "@/types";
+
+const SLIVER_WIDTH = 28; // px visible per collapsed card
+
+/**
+ * Renders a compact fanned stack of older cards, like holding playing cards.
+ * Each card shows only a thin left-edge sliver; the stack is expandable on hover.
+ */
+function CollapsedCardStack({ cards }: { cards: Card[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const stackWidth = expanded
+    ? cards.length * 280 + (cards.length - 1) * 12
+    : (cards.length - 1) * SLIVER_WIDTH + 64; // last card peeks a bit more
+
+  return (
+    <div
+      className="relative flex-shrink-0 cursor-pointer"
+      style={{ width: stackWidth, transition: "width 0.3s ease" }}
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      title={expanded ? undefined : `${cards.length} older version${cards.length !== 1 ? "s" : ""} — hover to expand`}
+    >
+      {/* Card count badge */}
+      {!expanded && (
+        <div className="absolute -top-2 -left-1 z-50 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white shadow">
+          {cards.length}
+        </div>
+      )}
+
+      <div
+        className="relative flex"
+        style={{
+          gap: expanded ? "12px" : "0px",
+          transition: "gap 0.3s ease",
+        }}
+      >
+        {cards.map((card, index) => (
+          <div
+            key={card.id}
+            className="flex-shrink-0 transition-all duration-300"
+            style={{
+              width: expanded ? 280 : index < cards.length - 1 ? SLIVER_WIDTH : 64,
+              overflow: "hidden",
+              zIndex: index,
+            }}
+          >
+            <div
+              className={`min-w-[280px] rounded-xl border p-3 ${
+                expanded
+                  ? "border-border bg-card/60 opacity-90"
+                  : "border-border/60 bg-card/40 opacity-70"
+              } transition-all duration-300`}
+            >
+              {/* Mini header */}
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="inline-flex items-center rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-muted">
+                  v{card.version}
+                </span>
+                {card.metadata?.status && (
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      card.metadata.status === "active"
+                        ? "bg-success"
+                        : card.metadata.status === "completed"
+                          ? "bg-primary"
+                          : "bg-muted"
+                    }`}
+                  />
+                )}
+              </div>
+              {/* Content preview (only visible when expanded) */}
+              {expanded && (
+                <p className="text-xs leading-relaxed line-clamp-3 text-muted">
+                  {card.content}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface StreamRowProps {
   stream: StreamNode;
@@ -42,7 +124,7 @@ export const StreamRow = memo(function StreamRow({
   };
 
   return (
-    <div className="group rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card-hover">
+    <div className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-card p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80">
       {/* Stream header */}
       <div className="flex items-center gap-2 mb-3">
         {hasChildren && (
@@ -66,6 +148,8 @@ export const StreamRow = memo(function StreamRow({
             </svg>
           </button>
         )}
+
+        <div className="h-1.5 w-1.5 rounded-full bg-primary/50 flex-shrink-0" />
 
         {isEditingTitle ? (
           <input
@@ -119,7 +203,7 @@ export const StreamRow = memo(function StreamRow({
       </div>
 
       {/* Cards row - horizontal scroll */}
-      <div className="stream-cards-scroll flex gap-3 overflow-x-auto pb-2">
+      <div className="stream-cards-scroll flex items-center gap-3 overflow-x-auto pb-2">
         {loading && cards.length === 0 ? (
           <div className="flex gap-3">
             {[1, 2].map((i) => (
@@ -131,7 +215,15 @@ export const StreamRow = memo(function StreamRow({
           </div>
         ) : (
           <>
-            {cards.map((card) => (
+            {/* Collapsed card stack (cards beyond the last 3) */}
+            {cards.length > 3 && (
+              <CollapsedCardStack
+                cards={cards.slice(0, cards.length - 3)}
+              />
+            )}
+
+            {/* Visible cards (last 3, or all if ≤ 3) */}
+            {(cards.length > 3 ? cards.slice(-3) : cards).map((card) => (
               <CardItem
                 key={card.id}
                 card={card}
@@ -151,7 +243,7 @@ export const StreamRow = memo(function StreamRow({
             ) : (
               <button
                 onClick={() => setShowNewCard(true)}
-                className="flex h-28 min-w-[120px] flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-muted transition-colors hover:border-primary hover:text-primary"
+                className="flex min-h-[80px] min-w-[80px] flex-shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
               >
                 <svg
                   className="h-5 w-5"
@@ -174,7 +266,7 @@ export const StreamRow = memo(function StreamRow({
 
       {/* Inline substream form */}
       {isAddingSubstream && (
-        <div className="mt-3 ml-6 border-l-2 border-border pl-4">
+        <div className="mt-3 ml-5 border-l-2 border-primary/15 pl-4">
           <NewStreamForm
             parentStreamId={stream.id}
             onCancel={() => setIsAddingSubstream(false)}

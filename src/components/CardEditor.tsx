@@ -64,7 +64,7 @@ export function CardEditor({
   };
 
   return (
-    <div className="min-w-[280px] max-w-[320px] flex-shrink-0 rounded-lg border-2 border-primary/60 bg-card p-3 shadow-md">
+    <div className="min-w-[280px] max-w-[320px] flex-shrink-0 rounded-xl border-2 border-primary/50 bg-card p-3 shadow-lg shadow-primary/10">
       <textarea
         ref={textareaRef}
         value={content}
