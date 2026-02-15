@@ -10,9 +10,11 @@ import { NewStreamForm } from "./NewStreamForm";
 import type { StreamNode, Card } from "@/types";
 
 /** Enables click-and-drag horizontal scrolling on a container. */
-function useDragScroll() {
+function useDragScroll(onDragStart?: () => void) {
   const ref = useRef<HTMLDivElement>(null);
   const state = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
+  const onDragStartRef = useRef(onDragStart);
+  onDragStartRef.current = onDragStart;
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     const el = ref.current;
@@ -37,7 +39,10 @@ function useDragScroll() {
     const x = e.pageX - el.offsetLeft;
     const walk = (x - s.startX) * 1.5; // scroll speed multiplier
     el.scrollLeft = s.scrollLeft - walk;
-    if (Math.abs(x - s.startX) > 3) s.moved = true;
+    if (Math.abs(x - s.startX) > 3) {
+      if (!s.moved) onDragStartRef.current?.();
+      s.moved = true;
+    }
   }, []);
 
   const onMouseUp = useCallback(() => {
@@ -244,7 +249,12 @@ export const StreamRow = memo(function StreamRow({
   const [showNewCard, setShowNewCard] = useState(false);
   const [isAddingSubstream, setIsAddingSubstream] = useState(false);
   const [stackExpanded, setStackExpanded] = useState(false);
-  const dragScroll = useDragScroll();
+  const dragScroll = useDragScroll(() => {
+    // Unfurl collapsed cards when the user starts dragging anywhere in the row
+    if (cards.length > 3 && !stackExpanded) {
+      setStackExpanded(true);
+    }
+  });
 
   const latestCard = cards.length > 0 ? cards[cards.length - 1] : null;
 
