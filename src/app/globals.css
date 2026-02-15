@@ -43,24 +43,6 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Custom scrollbar for card rows */
-.stream-cards-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-
-.stream-cards-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.stream-cards-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-}
-
-.stream-cards-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--color-muted);
-}
-
 /* Forced dark mode via class (system preference handled by media query above) */
 html.dark {
   --background: #09090b;
@@ -72,13 +54,11 @@ html.dark {
   --color-muted: #a1a1aa;
 }
 
-/* Card scroll snap on mobile */
-@media (max-width: 640px) {
-  .stream-cards-scroll {
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
-  }
-  .stream-cards-scroll > * {
-    scroll-snap-align: start;
-  }
+/* Hide scrollbar but keep scrolling */
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
