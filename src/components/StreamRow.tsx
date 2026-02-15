@@ -150,13 +150,7 @@ export const StreamRow = memo(function StreamRow({
               />
             ) : (
               <button
-                onClick={() => {
-                  if (latestCard?.isEditable) {
-                    setEditingCard(latestCard.id);
-                  } else {
-                    setShowNewCard(true);
-                  }
-                }}
+                onClick={() => setShowNewCard(true)}
                 className="flex h-28 min-w-[120px] flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-muted transition-colors hover:border-primary hover:text-primary"
               >
                 <svg
