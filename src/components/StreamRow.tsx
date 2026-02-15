@@ -23,7 +23,7 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
 
   return (
     <div
-      className="relative flex-shrink-0 cursor-pointer"
+      className="relative flex-shrink-0 cursor-pointer self-stretch"
       style={{ width: stackWidth, transition: "width 0.3s ease" }}
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
@@ -37,7 +37,7 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
       )}
 
       <div
-        className="relative flex"
+        className="relative flex h-full"
         style={{
           gap: expanded ? "12px" : "0px",
           transition: "gap 0.3s ease",
@@ -54,7 +54,7 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
             }}
           >
             <div
-              className={`min-w-[280px] rounded-xl border p-3 ${
+              className={`min-w-[280px] h-full rounded-xl border p-3 ${
                 expanded
                   ? "border-border bg-card/60 opacity-90"
                   : "border-border/60 bg-card/40 opacity-70"
@@ -203,7 +203,7 @@ export const StreamRow = memo(function StreamRow({
       </div>
 
       {/* Cards row - horizontal scroll */}
-      <div className="stream-cards-scroll flex items-center gap-3 overflow-x-auto pb-2">
+      <div className="stream-cards-scroll flex items-stretch gap-3 overflow-x-auto pb-2">
         {loading && cards.length === 0 ? (
           <div className="flex gap-3">
             {[1, 2].map((i) => (
@@ -243,7 +243,7 @@ export const StreamRow = memo(function StreamRow({
             ) : (
               <button
                 onClick={() => setShowNewCard(true)}
-                className="flex min-h-[80px] min-w-[80px] flex-shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
+                className="flex min-h-[80px] min-w-[80px] flex-shrink-0 self-stretch items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
               >
                 <svg
                   className="h-5 w-5"
