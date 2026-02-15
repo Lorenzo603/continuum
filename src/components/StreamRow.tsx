@@ -73,24 +73,87 @@ function useDragScroll() {
 }
 
 const SLIVER_WIDTH = 28; // px visible per collapsed card
+const CARD_WIDTH = 280;
+const CARD_GAP = 12;
 
 /**
  * Renders a compact fanned stack of older cards, like holding playing cards.
- * Each card shows only a thin left-edge sliver; the stack is expandable on hover.
+ * Hovering any card-sliver unfurls the entire stack at full width and scrolls
+ * the parent row so the hovered card is centered under the cursor.
  */
-function CollapsedCardStack({ cards }: { cards: Card[] }) {
-  const [expanded, setExpanded] = useState(false);
-  const stackWidth = expanded
-    ? cards.length * 280 + (cards.length - 1) * 12
-    : (cards.length - 1) * SLIVER_WIDTH + 64; // last card peeks a bit more
+function CollapsedCardStack({
+  cards,
+  parentScrollRef,
+  expanded,
+  setExpanded,
+}: {
+  cards: Card[];
+  parentScrollRef: React.RefObject<HTMLDivElement | null>;
+  expanded: boolean;
+  setExpanded: (v: boolean) => void;
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const stackRef = useRef<HTMLDivElement>(null);
+
+  const collapsedWidth = (cards.length - 1) * SLIVER_WIDTH + 64;
+  const expandedWidth = cards.length * CARD_WIDTH + (cards.length - 1) * CARD_GAP;
+  const stackWidth = expanded ? expandedWidth : collapsedWidth;
+
+  const scrollParentToCard = useCallback(
+    (index: number, cursorClientX?: number) => {
+      const parent = parentScrollRef.current;
+      const stack = stackRef.current;
+      if (!parent || !stack) return;
+
+      // Card's position within the stack
+      const cardOffsetInStack = index * (CARD_WIDTH + CARD_GAP);
+      // Stack's position within the scrollable parent's content
+      const stackOffsetInParent = stack.offsetLeft;
+      // Absolute card center within parent content
+      const cardCenterInParent = stackOffsetInParent + cardOffsetInStack + CARD_WIDTH / 2;
+
+      // Determine anchor: use cursor position relative to parent, or parent center
+      let anchor = parent.clientWidth / 2;
+      if (cursorClientX !== undefined) {
+        const parentRect = parent.getBoundingClientRect();
+        anchor = cursorClientX - parentRect.left;
+      }
+
+      const target = cardCenterInParent - anchor;
+      parent.scrollTo({
+        left: Math.max(0, Math.min(target, parent.scrollWidth - parent.clientWidth)),
+        behavior: expanded ? "smooth" : "instant",
+      });
+    },
+    [expanded, parentScrollRef],
+  );
+
+  const handleCardHover = useCallback(
+    (index: number, e: React.MouseEvent) => {
+      setHoveredIndex(index);
+
+      // Only scroll on the initial unfurl — not while already expanded
+      if (!expanded) {
+        const cursorX = e.clientX;
+        setExpanded(true);
+        requestAnimationFrame(() => {
+          scrollParentToCard(index, cursorX);
+        });
+      }
+    },
+    [expanded, setExpanded, scrollParentToCard],
+  );
 
   return (
     <div
-      className="relative flex-shrink-0 cursor-pointer self-stretch"
+      ref={stackRef}
+      className="relative flex-shrink-0 self-stretch"
       style={{ width: stackWidth, transition: "width 0.3s ease" }}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      title={expanded ? undefined : `${cards.length} older version${cards.length !== 1 ? "s" : ""} — hover to expand`}
+      title={
+        expanded
+          ? undefined
+          : `${cards.length} older version${cards.length !== 1 ? "s" : ""} — hover to expand`
+      }
     >
       {/* Card count badge */}
       {!expanded && (
@@ -100,9 +163,9 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
       )}
 
       <div
-        className="relative flex h-full"
+        className="relative flex h-full overflow-hidden"
         style={{
-          gap: expanded ? "12px" : "0px",
+          gap: expanded ? `${CARD_GAP}px` : "0px",
           transition: "gap 0.3s ease",
         }}
       >
@@ -111,17 +174,21 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
             key={card.id}
             className="flex-shrink-0 transition-all duration-300"
             style={{
-              width: expanded ? 280 : index < cards.length - 1 ? SLIVER_WIDTH : 64,
+              width: expanded ? CARD_WIDTH : index < cards.length - 1 ? SLIVER_WIDTH : 64,
               overflow: "hidden",
-              zIndex: index,
+              zIndex: expanded ? 0 : index,
+              cursor: expanded ? "default" : "pointer",
             }}
+            onMouseEnter={(e) => handleCardHover(index, e)}
           >
             <div
-              className={`min-w-[280px] h-full rounded-xl border p-3 ${
+              className={`min-w-[280px] h-full rounded-xl border p-3 transition-all duration-300 ${
                 expanded
-                  ? "border-border bg-card/60 opacity-90"
+                  ? hoveredIndex === index
+                    ? "border-primary/40 bg-card/80 opacity-100 shadow-sm"
+                    : "border-border bg-card/60 opacity-85"
                   : "border-border/60 bg-card/40 opacity-70"
-              } transition-all duration-300`}
+              }`}
             >
               {/* Mini header */}
               <div className="flex items-center gap-1.5 mb-1.5">
@@ -176,6 +243,7 @@ export const StreamRow = memo(function StreamRow({
   const [titleDraft, setTitleDraft] = useState(stream.title);
   const [showNewCard, setShowNewCard] = useState(false);
   const [isAddingSubstream, setIsAddingSubstream] = useState(false);
+  const [stackExpanded, setStackExpanded] = useState(false);
   const dragScroll = useDragScroll();
 
   const latestCard = cards.length > 0 ? cards[cards.length - 1] : null;
@@ -188,7 +256,10 @@ export const StreamRow = memo(function StreamRow({
   };
 
   return (
-    <div className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-card p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80">
+    <div
+      className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-card p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80"
+      onMouseLeave={() => setStackExpanded(false)}
+    >
       {/* Stream header */}
       <div className="flex items-center gap-2 mb-3">
         {hasChildren && (
@@ -290,6 +361,9 @@ export const StreamRow = memo(function StreamRow({
             {cards.length > 3 && (
               <CollapsedCardStack
                 cards={cards.slice(0, cards.length - 3)}
+                parentScrollRef={dragScroll.ref}
+                expanded={stackExpanded}
+                setExpanded={setStackExpanded}
               />
             )}
 
