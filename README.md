@@ -1,2 +1,2 @@
 # continuum
-Personal and professional workstream organizer
+Personal and professional workstreams organizer
