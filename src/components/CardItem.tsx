@@ -58,7 +58,7 @@ export const CardItem = memo(function CardItem({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium text-muted">
-              v{card.version}
+              {card.version}
             </span>
             {card.metadata?.status && (
               <span
