@@ -31,7 +31,7 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
     >
       {/* Card count badge */}
       {!expanded && (
-        <div className="absolute -top-2 -left-1 z-50 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white shadow">
+        <div className="absolute top-1 left-1 z-50 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-2 text-[10px] font-bold text-white shadow">
           {cards.length}
         </div>
       )}
@@ -63,7 +63,7 @@ function CollapsedCardStack({ cards }: { cards: Card[] }) {
               {/* Mini header */}
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="inline-flex items-center rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-muted">
-                  v{card.version}
+                  {card.version}
                 </span>
                 {card.metadata?.status && (
                   <span
