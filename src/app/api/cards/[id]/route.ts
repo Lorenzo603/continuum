@@ -34,6 +34,7 @@ export async function PATCH(
     const parsed = updateCardSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error("PATCH /api/cards validation failed:", JSON.stringify(parsed.error.flatten()), "body:", JSON.stringify(body));
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.flatten() },
         { status: 400 }

@@ -41,10 +41,7 @@ async function seed() {
           isEditable: isLast,
           metadata:
             item.status || item.tags
-              ? (JSON.stringify({
-                  status: item.status,
-                  tags: item.tags,
-                }) as unknown as null)
+              ? { status: item.status, tags: item.tags }
               : null,
         })
         .run();
