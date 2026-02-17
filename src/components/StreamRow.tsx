@@ -171,11 +171,9 @@ function CollapsedCardStack({
                 {card.metadata?.status && (
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      card.metadata.status === "active"
-                        ? "bg-success"
-                        : card.metadata.status === "completed"
-                          ? "bg-primary"
-                          : "bg-muted"
+                      card.metadata.status === "completed"
+                        ? "bg-primary"
+                        : "bg-muted"
                     }`}
                   />
                 )}
