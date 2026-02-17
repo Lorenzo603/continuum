@@ -42,15 +42,6 @@ function CardEditorModalInner() {
     return () => clearTimeout(t);
   }, []);
 
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCardEditor();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [closeCardEditor]);
-
   // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -93,16 +84,9 @@ function CardEditorModalInner() {
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === backdropRef.current) {
-      closeCardEditor();
-    }
-  };
-
   return (
     <div
       ref={backdropRef}
-      onClick={handleBackdropClick}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
     >
       <div className="relative w-full max-w-2xl mx-4 rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/30 animate-in zoom-in-95 duration-200">
