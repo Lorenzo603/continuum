@@ -4,7 +4,7 @@ export const cardMetadataSchema = z
   .object({
     tags: z.array(z.string()).optional(),
     dueDate: z.string().datetime().optional(),
-    status: z.enum(["active", "completed", "archived"]).optional(),
+    status: z.enum(["completed", "waiting", "in-progress", "action-required", "monitor"]).optional(),
   })
   .nullable()
   .optional();

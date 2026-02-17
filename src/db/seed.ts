@@ -28,7 +28,7 @@ async function seed() {
   // Helper to insert cards for a stream
   function insertCards(
     streamId: string,
-    items: { content: string; status?: "active" | "completed" | "archived"; tags?: string[] }[],
+    items: { content: string; status?: "completed" | "waiting" | "in-progress" | "action-required" | "monitor"; tags?: string[] }[],
   ) {
     items.forEach((item, i) => {
       const isLast = i === items.length - 1;
@@ -54,14 +54,14 @@ async function seed() {
   // --- Stream 2: 1 card ---
   const s2 = insertStream("Quick Note", 1);
   insertCards(s2, [
-    { content: "Remember to set up CI/CD pipeline for the staging environment.", status: "active", tags: ["devops"] },
+    { content: "Remember to set up CI/CD pipeline for the staging environment.", status: "action-required", tags: ["devops"] },
   ]);
 
   // --- Stream 3: 2 cards ---
   const s3 = insertStream("Blog Post Draft", 2);
   insertCards(s3, [
     { content: "Outline: Introduction to immutable data patterns in frontend apps.", status: "completed", tags: ["writing"] },
-    { content: "First draft complete. Need to add code examples and proofread.", status: "active", tags: ["writing", "review"] },
+    { content: "First draft complete. Need to add code examples and proofread.", status: "in-progress", tags: ["writing", "review"] },
   ]);
 
   // --- Stream 4: 4 cards ---
@@ -70,7 +70,7 @@ async function seed() {
     { content: "Initial product brainstorm: build a timeline-based task organizer that preserves history.", status: "completed", tags: ["planning"] },
     { content: "Refined the concept: streams as timelines, cards as immutable snapshots. Chose Next.js + Drizzle stack.", status: "completed", tags: ["planning", "architecture"] },
     { content: "MVP development in progress. Core data model and API routes implemented. UI components next.", status: "completed", tags: ["development"] },
-    { content: "UI overhaul complete — dark mode, collapsed card stacks, drag-to-scroll. Polishing remaining edge cases.", status: "active", tags: ["development", "ui"] },
+    { content: "UI overhaul complete — dark mode, collapsed card stacks, drag-to-scroll. Polishing remaining edge cases.", status: "in-progress", tags: ["development", "ui"] },
   ]);
 
   // --- Stream 5: 7 cards ---
@@ -82,7 +82,7 @@ async function seed() {
     { content: "Studied CSS container queries and modern responsive design. Applied to card layout.", status: "completed", tags: ["learning", "css"] },
     { content: "Deep dive into SQLite WAL mode and concurrent access patterns for better-sqlite3.", status: "completed", tags: ["learning", "database"] },
     { content: "Explored Tailwind v4 changes: CSS-first config, new color system, @theme directive.", status: "completed", tags: ["learning", "css"] },
-    { content: "Currently studying accessibility patterns for dynamic content — live regions, focus management, ARIA.", status: "active", tags: ["learning", "a11y"] },
+    { content: "Currently studying accessibility patterns for dynamic content — live regions, focus management, ARIA.", status: "monitor", tags: ["learning", "a11y"] },
   ]);
 
   // --- Stream 6: 10 cards ---
@@ -97,7 +97,7 @@ async function seed() {
     { content: "Built a small prototype for encrypted dotfile sync using age encryption.", status: "completed", tags: ["cli", "security"] },
     { content: "Meal planner shelved. Focusing on Continuum and the dotfiles CLI for now.", status: "completed", tags: ["planning"] },
     { content: "Continuum MVP nearly complete. Next: add drag-to-reorder for streams.", status: "completed", tags: ["continuum"] },
-    { content: "Exploring a browser extension to clip web content directly into Continuum streams.", status: "active", tags: ["continuum", "ideas"] },
+    { content: "Exploring a browser extension to clip web content directly into Continuum streams.", status: "waiting", tags: ["continuum", "ideas"] },
   ]);
 
   const totalCards = 0 + 1 + 2 + 4 + 7 + 10;

@@ -18,10 +18,20 @@ export interface Card {
   createdAt: string;
 }
 
+export type CardStatus = "completed" | "waiting" | "in-progress" | "action-required" | "monitor";
+
+export const CARD_STATUSES: { value: CardStatus; label: string }[] = [
+  { value: "in-progress", label: "In Progress" },
+  { value: "action-required", label: "Action Required" },
+  { value: "waiting", label: "Waiting" },
+  { value: "monitor", label: "Monitor" },
+  { value: "completed", label: "Completed" },
+];
+
 export interface CardMetadata {
   tags?: string[];
   dueDate?: string;
-  status?: "active" | "completed" | "archived";
+  status?: CardStatus;
 }
 
 // A stream with its resolved children for tree rendering

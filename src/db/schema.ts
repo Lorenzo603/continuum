@@ -25,7 +25,7 @@ export const cards = sqliteTable(
     metadata: text("metadata", { mode: "json" }).$type<{
       tags?: string[];
       dueDate?: string;
-      status?: "active" | "completed" | "archived";
+      status?: "completed" | "waiting" | "in-progress" | "action-required" | "monitor";
     } | null>(),
     createdAt: text("created_at")
       .notNull()
