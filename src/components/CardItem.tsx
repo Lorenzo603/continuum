@@ -2,6 +2,8 @@
 
 import { memo } from "react";
 import { useUIStore } from "@/stores/uiStore";
+import { useCardStore } from "@/stores/cardStore";
+import { toast } from "sonner";
 import type { Card } from "@/types";
 
 interface CardItemProps {
@@ -14,6 +16,16 @@ export const CardItem = memo(function CardItem({
   streamId,
 }: CardItemProps) {
   const openCardEditor = useUIStore((s) => s.openCardEditor);
+  const deleteCard = useCardStore((s) => s.deleteCard);
+
+  const handleDelete = async () => {
+    try {
+      await deleteCard(card.id, streamId);
+      toast.success("Card deleted");
+    } catch {
+      toast.error("Failed to delete card");
+    }
+  };
 
   const statusColors: Record<string, string> = {
     active: "bg-success",
@@ -52,32 +64,53 @@ export const CardItem = memo(function CardItem({
           </div>
           <div className="flex items-center gap-1">
             {card.isEditable ? (
-              <button
-                onClick={() =>
-                  openCardEditor({
-                    streamId,
-                    cardId: card.id,
-                    initialContent: card.content,
-                    initialMetadata: card.metadata,
-                  })
-                }
-                className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
-                title="Edit card (creates new version)"
-              >
-                <svg
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() =>
+                    openCardEditor({
+                      streamId,
+                      cardId: card.id,
+                      initialContent: card.content,
+                      initialMetadata: card.metadata,
+                    })
+                  }
+                  className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
+                  title="Edit card"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-danger hover:bg-danger/10"
+                  title="Delete card"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
             ) : (
               <span
                 className="text-muted"

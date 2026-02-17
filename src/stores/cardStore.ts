@@ -20,6 +20,7 @@ interface CardState {
     content: string,
     metadata?: CardMetadata | null
   ) => Promise<void>;
+  deleteCard: (cardId: string, streamId: string) => Promise<void>;
 }
 
 export const useCardStore = create<CardState>((set, get) => ({
@@ -158,6 +159,39 @@ export const useCardStore = create<CardState>((set, get) => ({
         cardsByStream: { ...state.cardsByStream, [streamId]: prev },
         error:
           error instanceof Error ? error.message : "Failed to update card",
+      }));
+    }
+  },
+
+  deleteCard: async (cardId, streamId) => {
+    const prev = get().cardsByStream[streamId] ?? [];
+    const nextVersion = (get()._mutationVersion[streamId] ?? 0) + 1;
+
+    // Optimistic: remove card and make previous one editable
+    const filtered = prev.filter((c) => c.id !== cardId);
+    if (filtered.length > 0) {
+      filtered[filtered.length - 1] = { ...filtered[filtered.length - 1], isEditable: true };
+    }
+    set((state) => ({
+      _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
+      cardsByStream: { ...state.cardsByStream, [streamId]: filtered },
+    }));
+
+    try {
+      const res = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete card");
+      // Re-fetch to get accurate server state
+      const cardsRes = await fetch(`/api/streams/${streamId}/cards`, { cache: "no-store" });
+      if (cardsRes.ok) {
+        const data = await cardsRes.json();
+        set((state) => ({
+          cardsByStream: { ...state.cardsByStream, [streamId]: data },
+        }));
+      }
+    } catch (error) {
+      set((state) => ({
+        cardsByStream: { ...state.cardsByStream, [streamId]: prev },
+        error: error instanceof Error ? error.message : "Failed to delete card",
       }));
     }
   },

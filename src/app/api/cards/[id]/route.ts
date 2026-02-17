@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCardById, updateCard } from "@/lib/cards";
+import { getCardById, updateCard, deleteCard } from "@/lib/cards";
 import { updateCardSchema } from "@/lib/validations";
 
 export async function GET(
@@ -45,6 +45,26 @@ export async function PATCH(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to update card";
+    const status = message.includes("not found")
+      ? 404
+      : message.includes("Only the latest")
+        ? 409
+        : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await deleteCard(id);
+    return NextResponse.json({ deleted: true });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete card";
     const status = message.includes("not found")
       ? 404
       : message.includes("Only the latest")

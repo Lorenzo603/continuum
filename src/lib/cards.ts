@@ -93,3 +93,36 @@ export async function updateCard(
 
   return result;
 }
+
+export async function deleteCard(cardId: string) {
+  const card = await getCardById(cardId);
+  if (!card) {
+    throw new Error("Card not found");
+  }
+  if (!card.isEditable) {
+    throw new Error("Only the latest card can be deleted");
+  }
+
+  return db.transaction((tx) => {
+    // Delete the card
+    tx.delete(cards).where(eq(cards.id, cardId)).run();
+
+    // Make the previous card (if any) editable again
+    const previous = tx
+      .select()
+      .from(cards)
+      .where(eq(cards.streamId, card.streamId))
+      .orderBy(desc(cards.version))
+      .limit(1)
+      .all();
+
+    if (previous.length > 0) {
+      tx.update(cards)
+        .set({ isEditable: true })
+        .where(eq(cards.id, previous[0].id))
+        .run();
+    }
+
+    return { deleted: true, streamId: card.streamId };
+  });
+}
