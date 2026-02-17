@@ -88,66 +88,33 @@ const CARD_GAP = 12;
  */
 function CollapsedCardStack({
   cards,
-  parentScrollRef,
   expanded,
   setExpanded,
+  parentScrollRef,
 }: {
   cards: Card[];
-  parentScrollRef: React.RefObject<HTMLDivElement | null>;
   expanded: boolean;
   setExpanded: (v: boolean) => void;
+  parentScrollRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const stackRef = useRef<HTMLDivElement>(null);
 
   const collapsedWidth = (cards.length - 1) * SLIVER_WIDTH + 64;
   const expandedWidth = cards.length * CARD_WIDTH + (cards.length - 1) * CARD_GAP;
   const stackWidth = expanded ? expandedWidth : collapsedWidth;
 
-  const scrollParentToCard = useCallback(
-    (index: number, cursorClientX?: number) => {
-      const parent = parentScrollRef.current;
-      const stack = stackRef.current;
-      if (!parent || !stack) return;
-
-      // Card's position within the stack
-      const cardOffsetInStack = index * (CARD_WIDTH + CARD_GAP);
-      // Stack's position within the scrollable parent's content
-      const stackOffsetInParent = stack.offsetLeft;
-      // Absolute card center within parent content
-      const cardCenterInParent = stackOffsetInParent + cardOffsetInStack + CARD_WIDTH / 2;
-
-      // Determine anchor: use cursor position relative to parent, or parent center
-      let anchor = parent.clientWidth / 2;
-      if (cursorClientX !== undefined) {
-        const parentRect = parent.getBoundingClientRect();
-        anchor = cursorClientX - parentRect.left;
-      }
-
-      const target = cardCenterInParent - anchor;
-      parent.scrollTo({
-        left: Math.max(0, Math.min(target, parent.scrollWidth - parent.clientWidth)),
-        behavior: expanded ? "smooth" : "instant",
-      });
-    },
-    [expanded, parentScrollRef],
-  );
-
-  const handleCardHover = useCallback(
-    (index: number, e: React.MouseEvent) => {
-      setHoveredIndex(index);
-
-      // Only scroll on the initial unfurl — not while already expanded
-      if (!expanded) {
-        const cursorX = e.clientX;
-        setExpanded(true);
-        requestAnimationFrame(() => {
-          scrollParentToCard(index, cursorX);
-        });
-      }
-    },
-    [expanded, setExpanded, scrollParentToCard],
-  );
+  const handleViewAll = useCallback(() => {
+    const parent = parentScrollRef.current;
+    if (!parent) return;
+    // Compensate scroll so the visible cards stay in place
+    const widthDelta = expandedWidth - collapsedWidth;
+    const currentScroll = parent.scrollLeft;
+    setExpanded(true);
+    // Apply scroll adjustment synchronously after state update
+    requestAnimationFrame(() => {
+      parent.scrollLeft = currentScroll + widthDelta;
+    });
+  }, [expandedWidth, collapsedWidth, setExpanded, parentScrollRef]);
 
   return (
     <div
@@ -157,14 +124,19 @@ function CollapsedCardStack({
       title={
         expanded
           ? undefined
-          : `${cards.length} older version${cards.length !== 1 ? "s" : ""} — hover to expand`
+          : `${cards.length} older version${cards.length !== 1 ? "s" : ""}`
       }
     >
-      {/* Card count badge */}
+      {/* "View All" button — shown when collapsed */}
       {!expanded && (
-        <div className="absolute top-1 left-1 z-50 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-2 text-[10px] font-bold text-white shadow">
-          {cards.length}
-        </div>
+        <button
+          onClick={handleViewAll}
+          className="absolute inset-0 z-50 flex items-center justify-center"
+        >
+          <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-sm transition-all hover:bg-primary hover:scale-105">
+            View all ({cards.length})
+          </span>
+        </button>
       )}
 
       <div
@@ -184,14 +156,11 @@ function CollapsedCardStack({
               zIndex: expanded ? 0 : index,
               cursor: expanded ? "default" : "pointer",
             }}
-            onMouseEnter={(e) => handleCardHover(index, e)}
           >
             <div
               className={`min-w-[280px] h-full rounded-xl border p-3 transition-all duration-300 ${
                 expanded
-                  ? hoveredIndex === index
-                    ? "border-primary/40 bg-card/80 opacity-100 shadow-sm"
-                    : "border-border bg-card/60 opacity-85"
+                  ? "border-border bg-card/60 opacity-85"
                   : "border-border/60 bg-card/40 opacity-70"
               }`}
             >
@@ -371,9 +340,9 @@ export const StreamRow = memo(function StreamRow({
             {cards.length > 3 && (
               <CollapsedCardStack
                 cards={cards.slice(0, cards.length - 3)}
-                parentScrollRef={dragScroll.ref}
                 expanded={stackExpanded}
                 setExpanded={setStackExpanded}
+                parentScrollRef={dragScroll.ref}
               />
             )}
 
