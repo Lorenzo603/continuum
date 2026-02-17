@@ -13,6 +13,111 @@ const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> =
   completed: { dot: "bg-muted", bg: "bg-muted/10", text: "text-muted" },
 };
 
+/* ── Custom scroll bar for the card strip ── */
+function StripScrollbar({ stripRef }: { stripRef: React.RefObject<HTMLDivElement | null> }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const [thumbWidth, setThumbWidth] = useState(0);
+  const [thumbLeft, setThumbLeft] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const dragState = useRef({ dragging: false, startX: 0, startScrollLeft: 0 });
+
+  // Sync thumb size and position with strip scroll
+  const sync = useCallback(() => {
+    const strip = stripRef.current;
+    const track = trackRef.current;
+    if (!strip) return;
+
+    const { scrollWidth, clientWidth, scrollLeft } = strip;
+    if (scrollWidth <= clientWidth) {
+      setVisible(false);
+      return;
+    }
+    setVisible(true);
+    const trackWidth = track?.clientWidth ?? strip.clientWidth;
+    const ratio = clientWidth / scrollWidth;
+    setThumbWidth(Math.max(ratio * trackWidth, 40));
+    setThumbLeft((scrollLeft / scrollWidth) * trackWidth);
+  }, [stripRef]);
+
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+    // Delay initial sync to ensure layout is complete
+    requestAnimationFrame(() => sync());
+    strip.addEventListener("scroll", sync, { passive: true });
+    const ro = new ResizeObserver(() => sync());
+    ro.observe(strip);
+    return () => {
+      strip.removeEventListener("scroll", sync);
+      ro.disconnect();
+    };
+  }, [stripRef, sync]);
+
+  // Re-sync once track element renders (after visible becomes true)
+  useEffect(() => {
+    if (visible && trackRef.current) {
+      sync();
+    }
+  }, [visible, sync]);
+
+  const onThumbMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const strip = stripRef.current;
+    if (!strip) return;
+    dragState.current = { dragging: true, startX: e.clientX, startScrollLeft: strip.scrollLeft };
+
+    const onMouseMove = (ev: MouseEvent) => {
+      const { dragging, startX, startScrollLeft } = dragState.current;
+      if (!dragging) return;
+      const track = trackRef.current;
+      if (!strip || !track) return;
+      const dx = ev.clientX - startX;
+      const scrollRatio = strip.scrollWidth / track.clientWidth;
+      strip.scrollLeft = startScrollLeft + dx * scrollRatio;
+    };
+
+    const onMouseUp = () => {
+      dragState.current.dragging = false;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, [stripRef]);
+
+  // Click on track to jump
+  const onTrackClick = useCallback((e: React.MouseEvent) => {
+    const strip = stripRef.current;
+    const track = trackRef.current;
+    if (!strip || !track) return;
+    // Ignore clicks on the thumb itself
+    if (thumbRef.current?.contains(e.target as Node)) return;
+    const rect = track.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = clickX / rect.width;
+    strip.scrollLeft = ratio * strip.scrollWidth - strip.clientWidth / 2;
+  }, [stripRef]);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      ref={trackRef}
+      onClick={onTrackClick}
+      className="relative h-2 mt-2 rounded-full bg-border/30 cursor-pointer"
+    >
+      <div
+        ref={thumbRef}
+        onMouseDown={onThumbMouseDown}
+        className="absolute top-0 h-full rounded-full bg-primary/40 hover:bg-primary/60 active:bg-primary/70 transition-colors cursor-grab active:cursor-grabbing"
+        style={{ width: thumbWidth, left: thumbLeft }}
+      />
+    </div>
+  );
+}
+
 interface StreamCardsModalProps {
   streamTitle: string;
   cards: Card[];
@@ -46,35 +151,6 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
         el.scrollLeft = el.scrollWidth;
       });
     }
-  }, []);
-
-  // Drag-scroll for the card strip
-  const dragState = useRef({ isDown: false, startX: 0, scrollLeft: 0 });
-  const onStripMouseDown = useCallback((e: React.MouseEvent) => {
-    const el = stripRef.current;
-    if (!el) return;
-    if ((e.target as HTMLElement).closest("button, a")) return;
-    dragState.current = { isDown: true, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft };
-    el.style.cursor = "grabbing";
-    el.style.userSelect = "none";
-  }, []);
-  const onStripMouseMove = useCallback((e: React.MouseEvent) => {
-    const s = dragState.current;
-    const el = stripRef.current;
-    if (!s.isDown || !el) return;
-    e.preventDefault();
-    const x = e.pageX - el.offsetLeft;
-    el.scrollLeft = s.scrollLeft - (x - s.startX) * 1.5;
-  }, []);
-  const onStripMouseUp = useCallback(() => {
-    const el = stripRef.current;
-    if (el) { el.style.cursor = "grab"; el.style.userSelect = ""; }
-    dragState.current.isDown = false;
-  }, []);
-  const onStripMouseLeave = useCallback(() => {
-    const el = stripRef.current;
-    if (el) { el.style.cursor = ""; el.style.userSelect = ""; }
-    dragState.current.isDown = false;
   }, []);
 
   const formatDate = (iso: string) =>
@@ -112,12 +188,7 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
         <div className="flex-shrink-0 border-b border-border/40 px-6 py-4">
           <div
             ref={stripRef}
-            onMouseDown={onStripMouseDown}
-            onMouseMove={onStripMouseMove}
-            onMouseUp={onStripMouseUp}
-            onMouseLeave={onStripMouseLeave}
-            className="flex gap-3 overflow-x-auto pb-2 scrollbar-none"
-            style={{ cursor: "grab" }}
+            className="flex gap-3 overflow-x-auto pb-1 scrollbar-none"
           >
             {displayCards.map((card) => {
               const isSelected = card.id === selectedId;
@@ -164,6 +235,7 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
               );
             })}
           </div>
+          <StripScrollbar stripRef={stripRef} />
         </div>
 
         {/* Section 2: Card detail */}
