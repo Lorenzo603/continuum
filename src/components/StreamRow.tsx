@@ -6,6 +6,7 @@ import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";
 import { CardItem } from "./CardItem";
 import { NewStreamForm } from "./NewStreamForm";
+import { StreamCardsModal } from "./StreamCardsModal";
 import type { StreamNode, Card } from "@/types";
 
 /** Enables click-and-drag horizontal scrolling on a container. */
@@ -77,118 +78,71 @@ function useDragScroll(onDragStart?: () => void) {
 }
 
 const SLIVER_WIDTH = 28; // px visible per collapsed card
-const CARD_WIDTH = 280;
-const CARD_GAP = 12;
 
 /**
- * Renders a compact fanned stack of older cards, like holding playing cards.
- * Hovering any card-sliver unfurls the entire stack at full width and scrolls
- * the parent row so the hovered card is centered under the cursor.
+ * Renders a compact fanned stack of older cards with a "View All" button
+ * that opens the StreamCardsModal.
  */
 function CollapsedCardStack({
   cards,
-  expanded,
-  setExpanded,
-  parentScrollRef,
+  allCards,
+  streamTitle,
 }: {
   cards: Card[];
-  expanded: boolean;
-  setExpanded: (v: boolean) => void;
-  parentScrollRef: React.RefObject<HTMLDivElement | null>;
+  allCards: Card[];
+  streamTitle: string;
 }) {
-  const stackRef = useRef<HTMLDivElement>(null);
-
+  const [showModal, setShowModal] = useState(false);
   const collapsedWidth = (cards.length - 1) * SLIVER_WIDTH + 64;
-  const expandedWidth = cards.length * CARD_WIDTH + (cards.length - 1) * CARD_GAP;
-  const stackWidth = expanded ? expandedWidth : collapsedWidth;
-
-  const handleViewAll = useCallback(() => {
-    const parent = parentScrollRef.current;
-    if (!parent) return;
-    // Compensate scroll so the visible cards stay in place
-    const widthDelta = expandedWidth - collapsedWidth;
-    const currentScroll = parent.scrollLeft;
-    setExpanded(true);
-    // Apply scroll adjustment synchronously after state update
-    requestAnimationFrame(() => {
-      parent.scrollLeft = currentScroll + widthDelta;
-    });
-  }, [expandedWidth, collapsedWidth, setExpanded, parentScrollRef]);
 
   return (
-    <div
-      ref={stackRef}
-      className="relative flex-shrink-0 self-stretch"
-      style={{ width: stackWidth, transition: "width 0.3s ease" }}
-      title={
-        expanded
-          ? undefined
-          : `${cards.length} older version${cards.length !== 1 ? "s" : ""}`
-      }
-    >
-      {/* "View All" button — shown when collapsed */}
-      {!expanded && (
+    <>
+      <div
+        className="relative flex-shrink-0 self-stretch"
+        style={{ width: collapsedWidth }}
+        title={`${cards.length} older version${cards.length !== 1 ? "s" : ""}`}
+      >
+        {/* "View All" button */}
         <button
-          onClick={handleViewAll}
+          onClick={() => setShowModal(true)}
           className="absolute inset-0 z-50 flex items-center justify-center cursor-pointer"
         >
           <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-sm transition-all hover:bg-primary hover:scale-105">
             View all ({cards.length})
           </span>
         </button>
-      )}
 
-      <div
-        className="relative flex h-full overflow-hidden"
-        style={{
-          gap: expanded ? `${CARD_GAP}px` : "0px",
-          transition: "gap 0.3s ease",
-        }}
-      >
-        {cards.map((card, index) => (
-          <div
-            key={card.id}
-            className="flex-shrink-0 transition-all duration-300"
-            style={{
-              width: expanded ? CARD_WIDTH : index < cards.length - 1 ? SLIVER_WIDTH : 64,
-              overflow: "hidden",
-              zIndex: expanded ? 0 : index,
-              cursor: expanded ? "default" : "pointer",
-            }}
-          >
+        <div className="relative flex h-full overflow-hidden">
+          {cards.map((card, index) => (
             <div
-              className={`min-w-[280px] h-full rounded-xl border p-3 transition-all duration-300 ${
-                expanded
-                  ? "border-border bg-card/60 opacity-85"
-                  : "border-border/60 bg-card/40 opacity-70"
-              }`}
+              key={card.id}
+              className="flex-shrink-0"
+              style={{
+                width: index < cards.length - 1 ? SLIVER_WIDTH : 64,
+                overflow: "hidden",
+                zIndex: index,
+              }}
             >
-              {/* Mini header */}
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="inline-flex items-center rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-muted">
-                  {card.version}
-                </span>
-                {card.metadata?.status && (
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      card.metadata.status === "completed"
-                        ? "bg-primary"
-                        : "bg-muted"
-                    }`}
-                  />
-                )}
+              <div className="min-w-[280px] h-full rounded-xl border border-border/60 bg-card/40 opacity-70 p-3">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="inline-flex items-center rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-muted">
+                    {card.version}
+                  </span>
+                </div>
               </div>
-              {/* Content preview (only visible when expanded) */}
-              {expanded && (
-                <p className="text-xs leading-relaxed line-clamp-3 text-muted">
-                  {card.content}
-                </p>
-              )}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {showModal && (
+        <StreamCardsModal
+          streamTitle={streamTitle}
+          cards={allCards}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -213,13 +167,7 @@ export const StreamRow = memo(function StreamRow({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(stream.title);
   const [isAddingSubstream, setIsAddingSubstream] = useState(false);
-  const [stackExpanded, setStackExpanded] = useState(false);
-  const dragScroll = useDragScroll(() => {
-    // Unfurl collapsed cards when the user starts dragging anywhere in the row
-    if (cards.length > 3 && !stackExpanded) {
-      setStackExpanded(true);
-    }
-  });
+  const dragScroll = useDragScroll();
 
   const handleTitleSave = () => {
     if (titleDraft.trim() && titleDraft !== stream.title) {
@@ -231,7 +179,6 @@ export const StreamRow = memo(function StreamRow({
   return (
     <div
       className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-card p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80"
-      onMouseLeave={() => setStackExpanded(false)}
     >
       {/* Stream header */}
       <div className="flex items-center gap-2 mb-3">
@@ -334,9 +281,8 @@ export const StreamRow = memo(function StreamRow({
             {cards.length > 3 && (
               <CollapsedCardStack
                 cards={cards.slice(0, cards.length - 3)}
-                expanded={stackExpanded}
-                setExpanded={setStackExpanded}
-                parentScrollRef={dragScroll.ref}
+                allCards={cards}
+                streamTitle={stream.title}
               />
             )}
 
