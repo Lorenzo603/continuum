@@ -81,28 +81,15 @@ export async function updateCard(
     throw new Error("Only the latest card can be edited");
   }
 
-  const newId = uuid();
+  const result = db
+    .update(cards)
+    .set({
+      content: data.content,
+      metadata: data.metadata ?? existingCard.metadata,
+    })
+    .where(eq(cards.id, cardId))
+    .returning()
+    .get();
 
-  // better-sqlite3 transactions are synchronous
-  return db.transaction((tx) => {
-    tx.update(cards)
-      .set({ isEditable: false })
-      .where(eq(cards.id, cardId))
-      .run();
-
-    const result = tx
-      .insert(cards)
-      .values({
-        id: newId,
-        streamId: existingCard.streamId,
-        content: data.content,
-        version: existingCard.version + 1,
-        isEditable: true,
-        metadata: data.metadata ?? existingCard.metadata,
-      })
-      .returning()
-      .get();
-
-    return result;
-  });
+  return result;
 }

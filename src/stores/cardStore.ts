@@ -120,25 +120,15 @@ export const useCardStore = create<CardState>((set, get) => ({
     const prev = get().cardsByStream[streamId] ?? [];
     // Bump mutation version to invalidate any in-flight fetchCards
     const nextVersion = (get()._mutationVersion[streamId] ?? 0) + 1;
-    // Optimistic: mark current card non-editable, and add new version
     const currentCard = prev.find((c) => c.id === cardId);
     if (!currentCard) return;
 
-    const optimisticNew: Card = {
-      id: `temp-${Date.now()}`,
-      streamId,
-      content,
-      version: currentCard.version + 1,
-      isEditable: true,
-      metadata: metadata ?? currentCard.metadata,
-      createdAt: new Date().toISOString(),
-    };
-    const optimisticCards = [
-      ...prev.map((c) =>
-        c.id === cardId ? { ...c, isEditable: false as const } : c
-      ),
-      optimisticNew,
-    ];
+    // Optimistic: update the card in-place
+    const optimisticCards = prev.map((c) =>
+      c.id === cardId
+        ? { ...c, content, metadata: metadata ?? c.metadata }
+        : c
+    );
     set((state) => ({
       _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
       cardsByStream: { ...state.cardsByStream, [streamId]: optimisticCards },
@@ -151,13 +141,13 @@ export const useCardStore = create<CardState>((set, get) => ({
         body: JSON.stringify({ content, metadata }),
       });
       if (!res.ok) throw new Error("Failed to update card");
-      const newCard: Card = await res.json();
+      const updatedCard: Card = await res.json();
 
-      // Replace the optimistic temp card with the real server card
+      // Replace the optimistic card with the real server card
       set((state) => {
         const current = state.cardsByStream[streamId] ?? [];
         const updated = current.map((c) =>
-          c.id === optimisticNew.id ? newCard : c
+          c.id === cardId ? updatedCard : c
         );
         return {
           cardsByStream: { ...state.cardsByStream, [streamId]: updated },

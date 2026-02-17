@@ -73,7 +73,7 @@ function CardEditorModalInner() {
           content.trim(),
           modal.initialMetadata,
         );
-        toast.success("New card version created");
+        toast.success("Card updated");
       } else {
         await handleCreate(modal.streamId, content.trim());
         toast.success("Card created");
