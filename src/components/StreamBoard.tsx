@@ -6,6 +6,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { StreamRow } from "./StreamRow";
 import { NewStreamForm } from "./NewStreamForm";
 import { EmptyState } from "./EmptyState";
+import { CardEditorModal } from "./CardEditorModal";
 import type { StreamNode } from "@/types";
 
 export function StreamBoard() {
@@ -62,6 +63,8 @@ export function StreamBoard() {
           New Stream
         </button>
       )}
+
+      <CardEditorModal />
     </div>
   );
 }

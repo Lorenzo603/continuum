@@ -1,36 +1,19 @@
 "use client";
 
 import { memo } from "react";
-import { CardEditor } from "./CardEditor";
+import { useUIStore } from "@/stores/uiStore";
 import type { Card } from "@/types";
 
 interface CardItemProps {
   card: Card;
   streamId: string;
-  isEditing: boolean;
-  onStartEdit: () => void;
-  onCancelEdit: () => void;
 }
 
 export const CardItem = memo(function CardItem({
   card,
   streamId,
-  isEditing,
-  onStartEdit,
-  onCancelEdit,
 }: CardItemProps) {
-  if (isEditing && card.isEditable) {
-    return (
-      <CardEditor
-        streamId={streamId}
-        cardId={card.id}
-        initialContent={card.content}
-        initialMetadata={card.metadata}
-        onCancel={onCancelEdit}
-        onSaved={onCancelEdit}
-      />
-    );
-  }
+  const openCardEditor = useUIStore((s) => s.openCardEditor);
 
   const statusColors: Record<string, string> = {
     active: "bg-success",
@@ -70,7 +53,14 @@ export const CardItem = memo(function CardItem({
           <div className="flex items-center gap-1">
             {card.isEditable ? (
               <button
-                onClick={onStartEdit}
+                onClick={() =>
+                  openCardEditor({
+                    streamId,
+                    cardId: card.id,
+                    initialContent: card.content,
+                    initialMetadata: card.metadata,
+                  })
+                }
                 className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
                 title="Edit card (creates new version)"
               >

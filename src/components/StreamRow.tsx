@@ -5,7 +5,6 @@ import { useCards } from "@/hooks/useCards";
 import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";
 import { CardItem } from "./CardItem";
-import { CardEditor } from "./CardEditor";
 import { NewStreamForm } from "./NewStreamForm";
 import type { StreamNode, Card } from "@/types";
 
@@ -212,10 +211,9 @@ export const StreamRow = memo(function StreamRow({
 }: StreamRowProps) {
   const { cards, loading } = useCards(stream.id);
   const { updateStream } = useStreamStore();
-  const { editingCardId, setEditingCard } = useUIStore();
+  const openCardEditor = useUIStore((s) => s.openCardEditor);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(stream.title);
-  const [showNewCard, setShowNewCard] = useState(false);
   const [isAddingSubstream, setIsAddingSubstream] = useState(false);
   const [stackExpanded, setStackExpanded] = useState(false);
   const dragScroll = useDragScroll(() => {
@@ -224,8 +222,6 @@ export const StreamRow = memo(function StreamRow({
       setStackExpanded(true);
     }
   });
-
-  const latestCard = cards.length > 0 ? cards[cards.length - 1] : null;
 
   const handleTitleSave = () => {
     if (titleDraft.trim() && titleDraft !== stream.title) {
@@ -352,38 +348,27 @@ export const StreamRow = memo(function StreamRow({
                 key={card.id}
                 card={card}
                 streamId={stream.id}
-                isEditing={editingCardId === card.id}
-                onStartEdit={() => setEditingCard(card.id)}
-                onCancelEdit={() => setEditingCard(null)}
               />
             ))}
 
-            {showNewCard ? (
-              <CardEditor
-                streamId={stream.id}
-                onCancel={() => setShowNewCard(false)}
-                onSaved={() => setShowNewCard(false)}
-              />
-            ) : (
-              <button
-                onClick={() => setShowNewCard(true)}
-                className="flex min-h-[80px] min-w-[80px] flex-shrink-0 self-stretch items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
+            <button
+              onClick={() => openCardEditor({ streamId: stream.id })}
+              className="flex min-h-[80px] min-w-[80px] flex-shrink-0 self-stretch items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-              </button>
-            )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </button>
           </>
         )}
       </div>
