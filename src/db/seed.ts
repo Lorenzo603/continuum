@@ -28,7 +28,7 @@ async function seed() {
   // Helper to insert cards for a stream
   function insertCards(
     streamId: string,
-    items: { content: string; status?: string; tags?: string[] }[],
+    items: { content: string; status?: "active" | "completed" | "archived"; tags?: string[] }[],
   ) {
     items.forEach((item, i) => {
       const isLast = i === items.length - 1;
