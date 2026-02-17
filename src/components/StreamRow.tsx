@@ -131,7 +131,7 @@ function CollapsedCardStack({
       {!expanded && (
         <button
           onClick={handleViewAll}
-          className="absolute inset-0 z-50 flex items-center justify-center"
+          className="absolute inset-0 z-50 flex items-center justify-center cursor-pointer"
         >
           <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-sm transition-all hover:bg-primary hover:scale-105">
             View all ({cards.length})
