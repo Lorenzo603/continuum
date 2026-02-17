@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, memo } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import { useCards } from "@/hooks/useCards";
 import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -8,74 +8,6 @@ import { CardItem } from "./CardItem";
 import { NewStreamForm } from "./NewStreamForm";
 import { StreamCardsModal } from "./StreamCardsModal";
 import type { StreamNode, Card } from "@/types";
-
-/** Enables click-and-drag horizontal scrolling on a container. */
-function useDragScroll(onDragStart?: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
-  const state = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
-  const onDragStartRef = useRef(onDragStart);
-  onDragStartRef.current = onDragStart;
-
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    const el = ref.current;
-    if (!el) return;
-    // Ignore if clicking on interactive elements
-    if ((e.target as HTMLElement).closest("button, textarea, input, a")) return;
-    state.current = {
-      isDown: true,
-      startX: e.pageX - el.offsetLeft,
-      scrollLeft: el.scrollLeft,
-      moved: false,
-    };
-    el.style.cursor = "grabbing";
-    el.style.userSelect = "none";
-  }, []);
-
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    const s = state.current;
-    const el = ref.current;
-    if (!s.isDown || !el) return;
-    e.preventDefault();
-    const x = e.pageX - el.offsetLeft;
-    const walk = (x - s.startX) * 1.5; // scroll speed multiplier
-    el.scrollLeft = s.scrollLeft - walk;
-    if (Math.abs(x - s.startX) > 3) {
-      if (!s.moved) onDragStartRef.current?.();
-      s.moved = true;
-    }
-  }, []);
-
-  const onMouseUp = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    state.current.isDown = false;
-    el.style.cursor = "grab";
-    el.style.userSelect = "";
-  }, []);
-
-  const onMouseLeave = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    state.current.isDown = false;
-    el.style.cursor = "";
-    el.style.userSelect = "";
-  }, []);
-
-  // Set initial grab cursor when content overflows
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const check = () => {
-      el.style.cursor = el.scrollWidth > el.clientWidth ? "grab" : "";
-    };
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  return { ref, onMouseDown, onMouseMove, onMouseUp, onMouseLeave };
-}
 
 const SLIVER_WIDTH = 28; // px visible per collapsed card
 
@@ -167,7 +99,6 @@ export const StreamRow = memo(function StreamRow({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(stream.title);
   const [isAddingSubstream, setIsAddingSubstream] = useState(false);
-  const dragScroll = useDragScroll();
 
   const handleTitleSave = () => {
     if (titleDraft.trim() && titleDraft !== stream.title) {
@@ -259,11 +190,6 @@ export const StreamRow = memo(function StreamRow({
 
       {/* Cards row - drag to scroll */}
       <div
-        ref={dragScroll.ref}
-        onMouseDown={dragScroll.onMouseDown}
-        onMouseMove={dragScroll.onMouseMove}
-        onMouseUp={dragScroll.onMouseUp}
-        onMouseLeave={dragScroll.onMouseLeave}
         className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-none"
       >
         {loading && cards.length === 0 ? (
