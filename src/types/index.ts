@@ -18,11 +18,12 @@ export interface Card {
   createdAt: string;
 }
 
-export type CardStatus = "completed" | "waiting" | "in-progress" | "action-required" | "monitor";
+export type CardStatus = "completed" | "waiting" | "in-progress" | "action-required" | "monitor" | "to-update";
 
 export const CARD_STATUSES: { value: CardStatus; label: string }[] = [
   { value: "in-progress", label: "In Progress" },
   { value: "action-required", label: "Action Required" },
+  { value: "to-update", label: "To Update" },
   { value: "waiting", label: "Waiting" },
   { value: "monitor", label: "Monitor" },
   { value: "completed", label: "Completed" },
