@@ -1,5 +1,4 @@
-import { db } from "@/db";
-import { cards } from "@/db/schema";
+import { db, cards, DB_TYPE } from "@/db";
 import { eq, asc, desc, and } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import type { CardMetadata } from "@/types";
@@ -40,31 +39,39 @@ export async function createCard(data: {
 
   // Check if there's already an editable card and mark it non-editable
   const existingEditable = await getLatestCard(data.streamId);
+  const version = existingEditable ? existingEditable.version + 1 : 1;
 
-  // better-sqlite3 transactions are synchronous
-  return db.transaction((tx) => {
+  const values = {
+    id,
+    streamId: data.streamId,
+    content: data.content,
+    version,
+    isEditable: true,
+    metadata: data.metadata ?? null,
+  };
+
+  if (DB_TYPE === "sqlite") {
+    // better-sqlite3: synchronous transaction with .run() / .get()
+    return db.transaction((tx: any) => {
+      if (existingEditable) {
+        tx.update(cards)
+          .set({ isEditable: false })
+          .where(eq(cards.id, existingEditable.id))
+          .run();
+      }
+      return tx.insert(cards).values(values).returning().get();
+    });
+  }
+
+  // PostgreSQL: async transaction
+  return db.transaction(async (tx: any) => {
     if (existingEditable) {
-      tx.update(cards)
+      await tx
+        .update(cards)
         .set({ isEditable: false })
-        .where(eq(cards.id, existingEditable.id))
-        .run();
+        .where(eq(cards.id, existingEditable.id));
     }
-
-    const version = existingEditable ? existingEditable.version + 1 : 1;
-
-    const result = tx
-      .insert(cards)
-      .values({
-        id,
-        streamId: data.streamId,
-        content: data.content,
-        version,
-        isEditable: true,
-        metadata: data.metadata ?? null,
-      })
-      .returning()
-      .get();
-
+    const [result] = await tx.insert(cards).values(values).returning();
     return result;
   });
 }
@@ -81,15 +88,14 @@ export async function updateCard(
     throw new Error("Only the latest card can be edited");
   }
 
-  const result = db
+  const [result] = await db
     .update(cards)
     .set({
       content: data.content,
       metadata: data.metadata ?? existingCard.metadata,
     })
     .where(eq(cards.id, cardId))
-    .returning()
-    .get();
+    .returning();
 
   return result;
 }
@@ -103,24 +109,46 @@ export async function deleteCard(cardId: string) {
     throw new Error("Only the latest card can be deleted");
   }
 
-  return db.transaction((tx) => {
-    // Delete the card
-    tx.delete(cards).where(eq(cards.id, cardId)).run();
+  if (DB_TYPE === "sqlite") {
+    // better-sqlite3: synchronous transaction
+    return db.transaction((tx: any) => {
+      tx.delete(cards).where(eq(cards.id, cardId)).run();
 
-    // Make the previous card (if any) editable again
-    const previous = tx
+      const previous = tx
+        .select()
+        .from(cards)
+        .where(eq(cards.streamId, card.streamId))
+        .orderBy(desc(cards.version))
+        .limit(1)
+        .all();
+
+      if (previous.length > 0) {
+        tx.update(cards)
+          .set({ isEditable: true })
+          .where(eq(cards.id, previous[0].id))
+          .run();
+      }
+
+      return { deleted: true, streamId: card.streamId };
+    });
+  }
+
+  // PostgreSQL: async transaction
+  return db.transaction(async (tx: any) => {
+    await tx.delete(cards).where(eq(cards.id, cardId));
+
+    const previous = await tx
       .select()
       .from(cards)
       .where(eq(cards.streamId, card.streamId))
       .orderBy(desc(cards.version))
-      .limit(1)
-      .all();
+      .limit(1);
 
     if (previous.length > 0) {
-      tx.update(cards)
+      await tx
+        .update(cards)
         .set({ isEditable: true })
-        .where(eq(cards.id, previous[0].id))
-        .run();
+        .where(eq(cards.id, previous[0].id));
     }
 
     return { deleted: true, streamId: card.streamId };

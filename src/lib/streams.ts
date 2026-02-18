@@ -1,8 +1,7 @@
-import { db } from "@/db";
-import { streams } from "@/db/schema";
+import { db, streams } from "@/db";
 import { eq, asc, isNull } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
-import type { StreamNode } from "@/types";
+import type { Stream, StreamNode } from "@/types";
 
 export async function getTopLevelStreams() {
   return db
@@ -34,9 +33,9 @@ export async function getAllStreams() {
 }
 
 export async function getStreamTree(): Promise<StreamNode[]> {
-  const allStreams = await getAllStreams();
+  const allStreams: Stream[] = await getAllStreams();
 
-  const childrenMap = new Map<string | null, typeof allStreams>();
+  const childrenMap = new Map<string | null, Stream[]>();
   for (const stream of allStreams) {
     const parentId = stream.parentStreamId;
     if (!childrenMap.has(parentId)) {
@@ -46,7 +45,7 @@ export async function getStreamTree(): Promise<StreamNode[]> {
   }
 
   function buildTree(parentId: string | null, depth: number): StreamNode[] {
-    const children = childrenMap.get(parentId) ?? [];
+    const children: Stream[] = childrenMap.get(parentId) ?? [];
     return children.map((stream) => ({
       ...stream,
       depth,
