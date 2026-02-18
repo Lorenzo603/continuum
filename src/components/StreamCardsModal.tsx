@@ -213,7 +213,7 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
                     <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
                       isSelected ? "bg-primary/15 text-primary" : "bg-surface text-muted"
                     }`}>
-                      v{card.version}
+                      {card.version}
                     </span>
                     {card.isEditable && (
                       <span className="text-[9px] font-medium text-primary/70">Latest</span>
