@@ -99,6 +99,7 @@ export const StreamRow = memo(function StreamRow({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(stream.title);
   const [isAddingSubstream, setIsAddingSubstream] = useState(false);
+  const [showCardsModal, setShowCardsModal] = useState(false);
 
   const handleTitleSave = () => {
     if (titleDraft.trim() && titleDraft !== stream.title) {
@@ -218,6 +219,7 @@ export const StreamRow = memo(function StreamRow({
                 key={card.id}
                 card={card}
                 streamId={stream.id}
+                onViewAll={() => setShowCardsModal(true)}
               />
             ))}
 
@@ -251,6 +253,15 @@ export const StreamRow = memo(function StreamRow({
             onCancel={() => setIsAddingSubstream(false)}
           />
         </div>
+      )}
+
+      {/* Cards modal */}
+      {showCardsModal && (
+        <StreamCardsModal
+          streamTitle={stream.title}
+          cards={cards}
+          onClose={() => setShowCardsModal(false)}
+        />
       )}
     </div>
   );

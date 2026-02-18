@@ -19,16 +19,20 @@ const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> =
 interface CardItemProps {
   card: Card;
   streamId: string;
+  onViewAll?: () => void;
 }
 
 export const CardItem = memo(function CardItem({
   card,
   streamId,
+  onViewAll,
 }: CardItemProps) {
   const openCardEditor = useUIStore((s) => s.openCardEditor);
   const deleteCard = useCardStore((s) => s.deleteCard);
 
   const updateCard = useCardStore((s) => s.updateCard);
+  const isOverflowing = card.content.length > 132;
+  const displayContent = isOverflowing ? card.content.slice(0, 132) + "…" : card.content;
 
   const handleDelete = async () => {
     try {
@@ -84,6 +88,32 @@ export const CardItem = memo(function CardItem({
           <div className="flex items-center gap-1">
             {card.isEditable ? (
               <div className="flex items-center gap-0.5">
+                {onViewAll && (
+                  <button
+                    onClick={onViewAll}
+                    className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
+                    title="View card details"
+                  >
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
+                    </svg>
+                  </button>
+                )}
                 <button
                   onClick={() =>
                     openCardEditor({
@@ -154,7 +184,15 @@ export const CardItem = memo(function CardItem({
         </div>
 
         {/* Content */}
-        <p className="text-sm leading-relaxed line-clamp-4">{card.content}</p>
+        <p className="text-sm leading-relaxed">{displayContent}</p>
+        {isOverflowing && onViewAll && (
+          <button
+            onClick={onViewAll}
+            className="mt-1 text-[10px] font-medium text-primary/70 hover:text-primary transition-colors"
+          >
+            … See all
+          </button>
+        )}
 
         {/* Tags */}
         {card.metadata?.tags && card.metadata.tags.length > 0 && (
