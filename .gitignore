@@ -1,4 +1,8 @@
+# Ignore local sqlite database files
 continuum.db*
+
+# Ignore script variable files
+scripts/scripts-config.txt
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
