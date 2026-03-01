@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useCardUpdate } from "@/hooks/useCardUpdate";
+import { TagEditor } from "@/components/TagEditor";
 import { toast } from "sonner";
 import type { CardMetadata } from "@/types";
 
@@ -23,6 +24,7 @@ export function CardEditor({
   onSaved,
 }: CardEditorProps) {
   const [content, setContent] = useState(initialContent);
+  const [tags, setTags] = useState<string[]>(initialMetadata?.tags ?? []);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { handleUpdate, handleCreate } = useCardUpdate();
@@ -36,13 +38,17 @@ export function CardEditor({
       toast.error("Content cannot be empty");
       return;
     }
+    const metadata: CardMetadata = {
+      ...initialMetadata,
+      tags: tags.length > 0 ? tags : undefined,
+    };
     setSaving(true);
     try {
       if (cardId) {
-        await handleUpdate(cardId, streamId, content.trim(), initialMetadata);
+        await handleUpdate(cardId, streamId, content.trim(), metadata);
         toast.success("New card version created");
       } else {
-        await handleCreate(streamId, content.trim());
+        await handleCreate(streamId, content.trim(), metadata);
         toast.success("Card created");
       }
       onSaved();
@@ -75,6 +81,7 @@ export function CardEditor({
         className="w-full resize-none rounded bg-transparent text-sm leading-relaxed placeholder:text-muted focus:outline-none"
         disabled={saving}
       />
+      <TagEditor tags={tags} onChange={setTags} disabled={saving} compact />
       <div className="mt-2 flex items-center justify-between">
         <span className="text-[10px] text-muted">
           {cardId ? "Saving creates a new version" : "New card"} · Ctrl+Enter to

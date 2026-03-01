@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useCardUpdate } from "@/hooks/useCardUpdate";
 import { useStreamStore } from "@/stores/streamStore";
+import { TagEditor } from "@/components/TagEditor";
 import { toast } from "sonner";
 
 export function CardEditorModal() {
@@ -23,6 +24,7 @@ function CardEditorModalInner() {
   const { handleUpdate, handleCreate } = useCardUpdate();
 
   const [content, setContent] = useState(modal.initialContent ?? "");
+  const [tags, setTags] = useState<string[]>(modal.initialMetadata?.tags ?? []);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -56,17 +58,21 @@ function CardEditorModalInner() {
       return;
     }
     setSaving(true);
+    const metadata = {
+      ...modal.initialMetadata,
+      tags: tags.length > 0 ? tags : undefined,
+    };
     try {
       if (modal.cardId) {
         await handleUpdate(
           modal.cardId,
           modal.streamId,
           content.trim(),
-          modal.initialMetadata,
+          metadata,
         );
         toast.success("Card updated");
       } else {
-        await handleCreate(modal.streamId, content.trim());
+        await handleCreate(modal.streamId, content.trim(), metadata);
         toast.success("Card created");
       }
       closeCardEditor();
@@ -75,7 +81,7 @@ function CardEditorModalInner() {
     } finally {
       setSaving(false);
     }
-  }, [content, modal, handleUpdate, handleCreate, closeCardEditor]);
+  }, [content, tags, modal, handleUpdate, handleCreate, closeCardEditor]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -123,7 +129,7 @@ function CardEditorModalInner() {
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5">
+        <div className="px-6 py-5 space-y-4">
           <textarea
             ref={textareaRef}
             value={content}
@@ -134,6 +140,7 @@ function CardEditorModalInner() {
             className="w-full resize-none rounded-xl border border-border/40 bg-surface/50 px-4 py-3 text-sm leading-relaxed placeholder:text-muted focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
             disabled={saving}
           />
+          <TagEditor tags={tags} onChange={setTags} disabled={saving} />
         </div>
 
         {/* Footer */}
