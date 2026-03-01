@@ -1,13 +1,18 @@
 import { db, streams } from "@/db";
-import { eq, asc, isNull } from "drizzle-orm";
+import { eq, asc, isNull, and } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import type { Stream, StreamNode } from "@/types";
 
-export async function getTopLevelStreams() {
+export async function getTopLevelStreams(workspaceId: string) {
   return db
     .select()
     .from(streams)
-    .where(isNull(streams.parentStreamId))
+    .where(
+      and(
+        eq(streams.workspaceId, workspaceId),
+        isNull(streams.parentStreamId),
+      ),
+    )
     .orderBy(asc(streams.orderIndex));
 }
 
@@ -28,12 +33,16 @@ export async function getStreamById(id: string) {
   return results[0] ?? null;
 }
 
-export async function getAllStreams() {
-  return db.select().from(streams).orderBy(asc(streams.orderIndex));
+export async function getAllStreams(workspaceId: string) {
+  return db
+    .select()
+    .from(streams)
+    .where(eq(streams.workspaceId, workspaceId))
+    .orderBy(asc(streams.orderIndex));
 }
 
-export async function getStreamTree(): Promise<StreamNode[]> {
-  const allStreams: Stream[] = await getAllStreams();
+export async function getStreamTree(workspaceId: string): Promise<StreamNode[]> {
+  const allStreams: Stream[] = await getAllStreams(workspaceId);
 
   const childrenMap = new Map<string | null, Stream[]>();
   for (const stream of allStreams) {
@@ -58,6 +67,7 @@ export async function getStreamTree(): Promise<StreamNode[]> {
 
 export async function createStream(data: {
   title: string;
+  workspaceId: string;
   parentStreamId?: string | null;
 }) {
   const id = uuid();
@@ -65,7 +75,7 @@ export async function createStream(data: {
   // Determine next orderIndex
   const siblings = data.parentStreamId
     ? await getSubstreams(data.parentStreamId)
-    : await getTopLevelStreams();
+    : await getTopLevelStreams(data.workspaceId);
   const orderIndex = siblings.length;
 
   const result = db
@@ -73,6 +83,7 @@ export async function createStream(data: {
     .values({
       id,
       title: data.title,
+      workspaceId: data.workspaceId,
       parentStreamId: data.parentStreamId ?? null,
       orderIndex,
     })

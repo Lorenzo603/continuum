@@ -1,8 +1,16 @@
 // Core domain types for Continuum
 
+export interface Workspace {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+}
+
 export interface Stream {
   id: string;
   title: string;
+  workspaceId: string;
   parentStreamId: string | null;
   orderIndex: number;
   createdAt: string;
@@ -42,8 +50,19 @@ export interface StreamNode extends Stream {
 }
 
 // API request/response types
+export interface CreateWorkspaceInput {
+  name: string;
+  description?: string | null;
+}
+
+export interface UpdateWorkspaceInput {
+  name?: string;
+  description?: string | null;
+}
+
 export interface CreateStreamInput {
   title: string;
+  workspaceId: string;
   parentStreamId?: string | null;
 }
 

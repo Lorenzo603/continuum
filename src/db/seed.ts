@@ -1,7 +1,15 @@
 import "dotenv/config";
 import { DB_TYPE, SQLITE_PATH, DATABASE_URL } from "./config";
-import { streams as sqliteStreams, cards as sqliteCards } from "./schema.sqlite";
-import { streams as pgStreams, cards as pgCards } from "./schema.pg";
+import {
+  workspaces as sqliteWorkspaces,
+  streams as sqliteStreams,
+  cards as sqliteCards,
+} from "./schema.sqlite";
+import {
+  workspaces as pgWorkspaces,
+  streams as pgStreams,
+  cards as pgCards,
+} from "./schema.pg";
 import { v4 as uuid } from "uuid";
 import path from "path";
 
@@ -21,6 +29,8 @@ function createConnection(): {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  workspaces: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   streams: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cards: any;
@@ -39,6 +49,7 @@ function createConnection(): {
 
     return {
       db: drizzle(sqlite),
+      workspaces: sqliteWorkspaces,
       streams: sqliteStreams,
       cards: sqliteCards,
       cleanup: () => sqlite.close(),
@@ -59,6 +70,7 @@ function createConnection(): {
   const pool = new Pool({ connectionString: DATABASE_URL });
   return {
     db: drizzle(pool),
+    workspaces: pgWorkspaces,
     streams: pgStreams,
     cards: pgCards,
     cleanup: () => pool.end(),
@@ -72,20 +84,29 @@ function createConnection(): {
 async function seed() {
   console.log(`🌱 Seeding database (${DB_TYPE})...`);
 
-  const { db, streams, cards, cleanup } = createConnection();
+  const { db, workspaces, streams, cards, cleanup } = createConnection();
 
   // Clear existing data
   await db.delete(cards);
   await db.delete(streams);
+  await db.delete(workspaces);
+
+  // Helper to insert a workspace
+  async function insertWorkspace(name: string, description: string | null = null) {
+    const id = uuid();
+    await db.insert(workspaces).values({ id, name, description });
+    return id;
+  }
 
   // Helper to insert a stream
   async function insertStream(
     title: string,
     orderIndex: number,
+    workspaceId: string,
     parentStreamId: string | null = null,
   ) {
     const id = uuid();
-    await db.insert(streams).values({ id, title, parentStreamId, orderIndex });
+    await db.insert(streams).values({ id, title, workspaceId, parentStreamId, orderIndex });
     return id;
   }
 
@@ -111,11 +132,15 @@ async function seed() {
     }
   }
 
-  // --- Stream 1: 0 cards ---
-  await insertStream("Empty Backlog", 0);
+  // --- Create workspaces ---
+  const ws1 = await insertWorkspace("Work", "Professional projects and tasks");
+  const ws2 = await insertWorkspace("Personal", "Personal projects and learning");
 
-  // --- Stream 2: 1 card ---
-  const s2 = await insertStream("Quick Note", 1);
+  // --- Stream 1: 0 cards (Work) ---
+  await insertStream("Empty Backlog", 0, ws1);
+
+  // --- Stream 2: 1 card (Work) ---
+  const s2 = await insertStream("Quick Note", 1, ws1);
   await insertCards(s2, [
     {
       content:
@@ -125,8 +150,8 @@ async function seed() {
     },
   ]);
 
-  // --- Stream 3: 2 cards ---
-  const s3 = await insertStream("Blog Post Draft", 2);
+  // --- Stream 3: 2 cards (Work) ---
+  const s3 = await insertStream("Blog Post Draft", 2, ws1);
   await insertCards(s3, [
     {
       content:
@@ -142,8 +167,8 @@ async function seed() {
     },
   ]);
 
-  // --- Stream 4: 4 cards ---
-  const s4 = await insertStream("Product Development", 3);
+  // --- Stream 4: 4 cards (Work) ---
+  const s4 = await insertStream("Product Development", 3, ws1);
   await insertCards(s4, [
     {
       content:
@@ -171,8 +196,8 @@ async function seed() {
     },
   ]);
 
-  // --- Stream 5: 7 cards ---
-  const s5 = await insertStream("Learning Goals", 4);
+  // --- Stream 5: 7 cards (Work) ---
+  const s5 = await insertStream("Learning Goals", 4, ws1);
   await insertCards(s5, [
     {
       content:
@@ -218,8 +243,8 @@ async function seed() {
     },
   ]);
 
-  // --- Stream 6: 10 cards ---
-  const s6 = await insertStream("Personal Projects", 5);
+  // --- Stream 6: 10 cards (Work) ---
+  const s6 = await insertStream("Personal Projects", 5, ws1);
   await insertCards(s6, [
     {
       content:
@@ -277,9 +302,46 @@ async function seed() {
     },
   ]);
 
-  const totalCards = 0 + 1 + 2 + 4 + 7 + 10;
+  // --- Personal workspace streams ---
+  const ps1 = await insertStream("Fitness Tracker", 0, ws2);
+  await insertCards(ps1, [
+    {
+      content: "Started a new running routine — 3x per week, building up to 5K.",
+      status: "in-progress",
+      tags: ["health", "running"],
+    },
+    {
+      content: "Hit 5K milestone! Now adding strength training on off days.",
+      status: "completed",
+      tags: ["health"],
+    },
+  ]);
+
+  const ps2 = await insertStream("Reading List", 1, ws2);
+  await insertCards(ps2, [
+    {
+      content: "Finished 'Designing Data-Intensive Applications' — excellent overview of distributed systems trade-offs.",
+      status: "completed",
+      tags: ["books", "tech"],
+    },
+    {
+      content: "Currently reading 'The Pragmatic Programmer'. Taking notes on automation chapter.",
+      status: "in-progress",
+      tags: ["books", "tech"],
+    },
+    {
+      content: "Up next: 'Staff Engineer' by Will Larson.",
+      status: "waiting",
+      tags: ["books", "career"],
+    },
+  ]);
+
+  await insertStream("Travel Planning", 2, ws2);
+
+  const totalCards = 0 + 1 + 2 + 4 + 7 + 10 + 2 + 3 + 0;
   console.log("✅ Seeded:");
-  console.log("   6 streams (0, 1, 2, 4, 7, 10 cards)");
+  console.log("   2 workspaces (Work: 6 streams, Personal: 3 streams)");
+  console.log("   9 streams total");
   console.log(`   ${totalCards} cards total`);
 
   await cleanup();

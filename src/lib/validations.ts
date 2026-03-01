@@ -9,8 +9,19 @@ export const cardMetadataSchema = z
   .nullable()
   .optional();
 
+export const createWorkspaceSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  description: z.string().max(500).nullable().optional(),
+});
+
+export const updateWorkspaceSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).nullable().optional(),
+});
+
 export const createStreamSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
+  workspaceId: z.string().uuid(),
   parentStreamId: z.string().uuid().nullable().optional(),
 });
 

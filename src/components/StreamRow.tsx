@@ -250,6 +250,7 @@ export const StreamRow = memo(function StreamRow({
         <div className="mt-3 ml-5 border-l-2 border-primary/15 pl-4">
           <NewStreamForm
             parentStreamId={stream.id}
+            workspaceId={stream.workspaceId}
             onCancel={() => setIsAddingSubstream(false)}
           />
         </div>

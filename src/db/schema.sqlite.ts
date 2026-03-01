@@ -1,8 +1,20 @@
 import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 
+export const workspaces = sqliteTable("workspaces", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 export const streams = sqliteTable("streams", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
   parentStreamId: text("parent_stream_id").references((): ReturnType<typeof text> => streams.id, {
     onDelete: "cascade",
   }),

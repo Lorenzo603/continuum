@@ -8,9 +8,21 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
+export const workspaces = pgTable("workspaces", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 export const streams = pgTable("streams", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
   parentStreamId: text("parent_stream_id").references(
     (): AnyPgColumn => streams.id,
     { onDelete: "cascade" },

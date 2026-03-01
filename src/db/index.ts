@@ -20,6 +20,7 @@ function initSqlite() {
 
   return {
     db: drizzle(sqlite, { schema: sqliteSchema }),
+    workspaces: sqliteSchema.workspaces,
     streams: sqliteSchema.streams,
     cards: sqliteSchema.cards,
   };
@@ -41,6 +42,7 @@ function initPostgres() {
 
   return {
     db: drizzle(pool, { schema: pgSchema }),
+    workspaces: pgSchema.workspaces,
     streams: pgSchema.streams,
     cards: pgSchema.cards,
   };
@@ -54,6 +56,10 @@ const instance = DB_TYPE === "sqlite" ? initSqlite() : initPostgres();
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const db: any = instance.db;
+
+/** The `workspaces` table for the active dialect. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const workspaces: any = instance.workspaces;
 
 /** The `streams` table for the active dialect. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

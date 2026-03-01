@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 import { getStreamTree, createStream } from "@/lib/streams";
 import { createStreamSchema } from "@/lib/validations";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const tree = await getStreamTree();
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get("workspaceId");
+
+    if (!workspaceId) {
+      return NextResponse.json(
+        { error: "workspaceId query parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const tree = await getStreamTree(workspaceId);
     return NextResponse.json(tree);
   } catch (error) {
     console.error("Failed to fetch streams:", error);

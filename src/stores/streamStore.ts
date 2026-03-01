@@ -3,11 +3,12 @@ import type { StreamNode } from "@/types";
 
 interface StreamState {
   streams: StreamNode[];
+  currentWorkspaceId: string | null;
   loading: boolean;
   error: string | null;
 
-  fetchStreams: () => Promise<void>;
-  addStream: (title: string, parentStreamId?: string | null) => Promise<void>;
+  fetchStreams: (workspaceId: string) => Promise<void>;
+  addStream: (title: string, workspaceId: string, parentStreamId?: string | null) => Promise<void>;
   updateStream: (
     id: string,
     data: { title?: string; orderIndex?: number }
@@ -17,13 +18,14 @@ interface StreamState {
 
 export const useStreamStore = create<StreamState>((set, get) => ({
   streams: [],
+  currentWorkspaceId: null,
   loading: false,
   error: null,
 
-  fetchStreams: async () => {
-    set({ loading: true, error: null });
+  fetchStreams: async (workspaceId: string) => {
+    set({ loading: true, error: null, currentWorkspaceId: workspaceId });
     try {
-      const res = await fetch("/api/streams");
+      const res = await fetch(`/api/streams?workspaceId=${encodeURIComponent(workspaceId)}`);
       if (!res.ok) throw new Error("Failed to fetch streams");
       const data = await res.json();
       set({ streams: data, loading: false });
@@ -35,17 +37,17 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     }
   },
 
-  addStream: async (title, parentStreamId = null) => {
+  addStream: async (title, workspaceId, parentStreamId = null) => {
     const prev = get().streams;
     try {
       const res = await fetch("/api/streams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, parentStreamId }),
+        body: JSON.stringify({ title, workspaceId, parentStreamId }),
       });
       if (!res.ok) throw new Error("Failed to create stream");
       // Refetch the full tree to get proper nesting
-      await get().fetchStreams();
+      await get().fetchStreams(workspaceId);
     } catch (error) {
       set({
         streams: prev,
@@ -74,7 +76,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       if (!res.ok) throw new Error("Failed to update stream");
       // If orderIndex changed, refetch for proper ordering
       if (data.orderIndex !== undefined) {
-        await get().fetchStreams();
+        const wsId = get().currentWorkspaceId;
+        if (wsId) await get().fetchStreams(wsId);
       }
     } catch (error) {
       set({
