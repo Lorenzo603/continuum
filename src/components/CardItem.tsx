@@ -91,7 +91,7 @@ export const CardItem = memo(function CardItem({
                 {onViewAll && (
                   <button
                     onClick={onViewAll}
-                    className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
+                    className="cursor-pointer rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
                     title="View card details"
                   >
                     <svg
@@ -123,7 +123,7 @@ export const CardItem = memo(function CardItem({
                       initialMetadata: card.metadata,
                     })
                   }
-                  className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
+                  className="cursor-pointer rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
                   title="Edit card"
                 >
                   <svg
@@ -142,7 +142,7 @@ export const CardItem = memo(function CardItem({
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-danger hover:bg-danger/10"
+                  className="cursor-pointer rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-danger hover:bg-danger/10"
                   title="Delete card"
                 >
                   <svg
@@ -188,7 +188,7 @@ export const CardItem = memo(function CardItem({
         {isOverflowing && onViewAll && (
           <button
             onClick={onViewAll}
-            className="mt-1 text-[10px] font-medium text-primary/70 hover:text-primary transition-colors"
+            className="cursor-pointer mt-1 text-[10px] font-medium text-primary/70 hover:text-primary transition-colors"
           >
             … See all
           </button>
@@ -261,7 +261,7 @@ function StatusDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+        className={`cursor-pointer inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
           colors
             ? `${colors.bg} ${colors.text} hover:brightness-110`
             : "bg-surface text-muted hover:text-foreground"
@@ -287,7 +287,7 @@ function StatusDropdown({
                   onChange(isActive ? undefined : s.value);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface ${
+                className={`cursor-pointer flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface ${
                   isActive ? "font-medium" : ""
                 }`}
               >
