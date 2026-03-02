@@ -1,5 +1,23 @@
 "use client";
 
+import { useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "./dndModifiers";
 import { useStreams } from "@/hooks/useStreams";
 import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -13,8 +31,35 @@ import type { StreamNode } from "@/types";
 export function StreamBoard() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const { streams, loading, error } = useStreams(activeWorkspaceId);
-  const { deleteStream } = useStreamStore();
+  const { deleteStream, reorderStreams } = useStreamStore();
   const { isCreatingStream, setCreatingStream } = useUIStore();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = streams.findIndex((s) => s.id === active.id);
+      const newIndex = streams.findIndex((s) => s.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = [...streams.map((s) => s.id)];
+      reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, active.id as string);
+
+      reorderStreams(null, reordered);
+    },
+    [streams, reorderStreams]
+  );
 
   if (!activeWorkspaceId) {
     return (
@@ -43,9 +88,26 @@ export function StreamBoard() {
 
   return (
     <div className="flex flex-col gap-4">
-      {streams.map((stream) => (
-        <StreamTree key={stream.id} node={stream} onDelete={deleteStream} />
-      ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToVerticalAxis]}
+      >
+        <SortableContext
+          items={streams.map((s) => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {streams.map((stream) => (
+            <SortableStreamTree
+              key={stream.id}
+              node={stream}
+              onDelete={deleteStream}
+              onReorderChildren={reorderStreams}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       {isCreatingStream ? (
         <NewStreamForm
@@ -80,31 +142,95 @@ export function StreamBoard() {
   );
 }
 
-function StreamTree({
+function SortableStreamTree({
   node,
   onDelete,
+  onReorderChildren,
 }: {
   node: StreamNode;
   onDelete: (id: string) => void;
+  onReorderChildren: (parentStreamId: string | null, orderedIds: string[]) => Promise<void>;
 }) {
   const { expandedStreams, toggleStreamExpand } = useUIStore();
   const isExpanded = expandedStreams.has(node.id);
   const hasChildren = node.children.length > 0;
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: node.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleChildDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const children = node.children;
+      const oldIndex = children.findIndex((s) => s.id === active.id);
+      const newIndex = children.findIndex((s) => s.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = [...children.map((s) => s.id)];
+      reordered.splice(oldIndex, 1);
+      reordered.splice(newIndex, 0, active.id as string);
+
+      onReorderChildren(node.id, reordered);
+    },
+    [node.children, node.id, onReorderChildren]
+  );
+
   return (
-    <div>
+    <div ref={setNodeRef} style={style}>
       <StreamRow
         stream={node}
         hasChildren={hasChildren}
         isExpanded={isExpanded}
         onToggleExpand={() => toggleStreamExpand(node.id)}
         onDelete={() => onDelete(node.id)}
+        dragHandleProps={{ ...attributes, ...listeners }}
       />
       {hasChildren && isExpanded && (
         <div className="ml-5 border-l-2 border-primary/15 pl-4 mt-2 flex flex-col gap-3">
-          {node.children.map((child) => (
-            <StreamTree key={child.id} node={child} onDelete={onDelete} />
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleChildDragEnd}
+            modifiers={[restrictToVerticalAxis]}
+          >
+            <SortableContext
+              items={node.children.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {node.children.map((child) => (
+                <SortableStreamTree
+                  key={child.id}
+                  node={child}
+                  onDelete={onDelete}
+                  onReorderChildren={onReorderChildren}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
     </div>

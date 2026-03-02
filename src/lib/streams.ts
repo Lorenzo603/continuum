@@ -105,6 +105,17 @@ export async function updateStream(
   return (await result)[0] ?? null;
 }
 
+export async function reorderStreams(orderedIds: string[]) {
+  // Update each stream's orderIndex to match its position in the array
+  const updates = orderedIds.map((id, index) =>
+    db
+      .update(streams)
+      .set({ orderIndex: index })
+      .where(eq(streams.id, id))
+  );
+  await Promise.all(updates);
+}
+
 export async function deleteStream(id: string) {
   // Cascade delete is handled by foreign key constraint
   return db.delete(streams).where(eq(streams.id, id));

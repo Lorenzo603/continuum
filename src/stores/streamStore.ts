@@ -14,6 +14,10 @@ interface StreamState {
     data: { title?: string; orderIndex?: number }
   ) => Promise<void>;
   deleteStream: (id: string) => Promise<void>;
+  reorderStreams: (
+    parentStreamId: string | null,
+    orderedIds: string[]
+  ) => Promise<void>;
 }
 
 export const useStreamStore = create<StreamState>((set, get) => ({
@@ -101,6 +105,27 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       });
     }
   },
+
+  reorderStreams: async (parentStreamId, orderedIds) => {
+    const prev = get().streams;
+    // Optimistic reorder
+    set({
+      streams: reorderNodesInTree(prev, parentStreamId, orderedIds),
+    });
+    try {
+      const res = await fetch("/api/streams/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!res.ok) throw new Error("Failed to reorder streams");
+    } catch (error) {
+      set({
+        streams: prev,
+        error: error instanceof Error ? error.message : "Failed to reorder streams",
+      });
+    }
+  },
 }));
 
 // Helper: recursively update a node in the tree
@@ -126,4 +151,38 @@ function removeNodeFromTree(nodes: StreamNode[], id: string): StreamNode[] {
       ...node,
       children: removeNodeFromTree(node.children, id),
     }));
+}
+
+// Helper: reorder nodes at a specific level in the tree
+function reorderNodesInTree(
+  nodes: StreamNode[],
+  parentStreamId: string | null,
+  orderedIds: string[]
+): StreamNode[] {
+  if (parentStreamId === null) {
+    // Reorder top-level nodes
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    return orderedIds
+      .map((id) => nodeMap.get(id))
+      .filter((n): n is StreamNode => n !== undefined)
+      .map((node, index) => ({ ...node, orderIndex: index }));
+  }
+
+  // Recurse into children to find the parent
+  return nodes.map((node) => {
+    if (node.id === parentStreamId) {
+      const childMap = new Map(node.children.map((c) => [c.id, c]));
+      return {
+        ...node,
+        children: orderedIds
+          .map((id) => childMap.get(id))
+          .filter((c): c is StreamNode => c !== undefined)
+          .map((child, index) => ({ ...child, orderIndex: index })),
+      };
+    }
+    return {
+      ...node,
+      children: reorderNodesInTree(node.children, parentStreamId, orderedIds),
+    };
+  });
 }

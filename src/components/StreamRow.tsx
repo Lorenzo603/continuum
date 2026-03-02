@@ -84,6 +84,7 @@ interface StreamRowProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onDelete: () => void;
+  dragHandleProps?: Record<string, unknown>;
 }
 
 export const StreamRow = memo(function StreamRow({
@@ -92,6 +93,7 @@ export const StreamRow = memo(function StreamRow({
   isExpanded,
   onToggleExpand,
   onDelete,
+  dragHandleProps,
 }: StreamRowProps) {
   const { cards, loading } = useCards(stream.id);
   const { updateStream } = useStreamStore();
@@ -114,6 +116,22 @@ export const StreamRow = memo(function StreamRow({
     >
       {/* Stream header */}
       <div className="flex items-center gap-2 mb-3">
+        {/* Drag handle */}
+        <button
+          {...dragHandleProps}
+          className="flex-shrink-0 cursor-grab rounded p-0.5 text-muted/40 transition-colors hover:text-muted active:cursor-grabbing"
+          aria-label="Drag to reorder"
+        >
+          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="9" cy="5" r="1.5" />
+            <circle cx="15" cy="5" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="19" r="1.5" />
+            <circle cx="15" cy="19" r="1.5" />
+          </svg>
+        </button>
+
         {hasChildren && (
           <button
             onClick={onToggleExpand}

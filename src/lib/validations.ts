@@ -30,6 +30,10 @@ export const updateStreamSchema = z.object({
   orderIndex: z.number().int().min(0).optional(),
 });
 
+export const reorderStreamsSchema = z.object({
+  orderedIds: z.array(z.string().uuid()).min(1),
+});
+
 export const createCardSchema = z.object({
   streamId: z.string().uuid(),
   content: z.string().min(1, "Content is required"),
