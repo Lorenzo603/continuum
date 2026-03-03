@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies (installed inside container)
+node_modules
+
+# Build artifacts
+.next
+out
+dist
+
+# Development files
+.env*
+!.env.example
+*.log
+coverage
+.nyc_output
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Database files
+*.db
+*.sqlite
+continuum.db*
+
+# CI/CD
+.github/
+
+# Scripts
+scripts/
