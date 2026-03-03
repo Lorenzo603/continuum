@@ -30,6 +30,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Access Token Protection
+
+The app includes a `proxy` middleware that can protect all routes (including API routes) using a shared token.
+
+Set an environment variable:
+
+```bash
+ACCESS_TOKEN=your-secret-token
+```
+
+When `ACCESS_TOKEN` is set, each request must provide one of:
+
+- `Authorization: Bearer <token>`
+- `X-Access-Token: <token>`
+
+If the token is missing or invalid, the app returns `401 Unauthorized`.
+If `ACCESS_TOKEN` is not set, auth checks are skipped (development mode).
+
 ## Project Structure
 
 ```
