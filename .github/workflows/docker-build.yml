@@ -15,15 +15,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set image name to lowercase
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:${{ github.sha }} .
-          docker tag ghcr.io/${{ github.repository }}:${{ github.sha }} ghcr.io/${{ github.repository }}:latest
+          docker build -t ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker tag ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} ghcr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Push image
         run: |
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
-          docker push ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:latest
