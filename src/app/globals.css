@@ -1,14 +1,18 @@
 @import "tailwindcss";
 
 /* ── Light mode (opt-in via html.light) ── */
+/* Palette: #FFFBF1 (cream), #FFF2D0 (warm gold), #FFB2B2 (soft coral), #E36A6A (accent rose) */
+/* 60-30-10: 60% cream bg, 30% warm gold surfaces, 10% rose accent */
 html.light {
-  --background: #ffffff;
-  --foreground: #171717;
-  --color-border: #e5e7eb;
+  --background: #fffbf1;
+  --foreground: #2d1f1f;
+  --color-border: #f0dbb0;
   --color-card: #ffffff;
-  --color-card-hover: #f9fafb;
-  --color-surface: #f3f4f6;
-  --color-muted: #6b7280;
+  --color-card-hover: #fff6e0;
+  --color-surface: #fff2d0;
+  --color-muted: #8a6d4d;
+  --color-primary: #e36a6a;
+  --color-primary-hover: #d45454;
 }
 
 /* ── Dark mode (default) ── */
