@@ -52,6 +52,15 @@ function CardEditorModalInner() {
     };
   }, []);
 
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !saving) closeCardEditor();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [saving, closeCardEditor]);
+
   const handleSave = useCallback(async () => {
     if (!content.trim()) {
       toast.error("Content cannot be empty");
@@ -93,7 +102,11 @@ function CardEditorModalInner() {
   return (
     <div
       ref={backdropRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={isEditing ? "Edit Card" : "New Card"}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => { if (e.target === backdropRef.current && !saving) closeCardEditor(); }}
     >
       <div className="relative w-full max-w-2xl mx-4 rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/30 animate-in zoom-in-95 duration-200">
         {/* Header */}

@@ -153,6 +153,15 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
     }
   }, []);
 
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", {
       month: "short",
@@ -163,7 +172,13 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
     });
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${streamTitle} — Card History`}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="relative flex flex-col w-full max-w-5xl max-h-[85vh] mx-4 rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/30 animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/40 px-6 py-4 flex-shrink-0">

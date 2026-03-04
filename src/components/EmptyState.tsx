@@ -27,7 +27,7 @@ export function EmptyState({ onCreateStream }: EmptyStateProps) {
       </p>
       <button
         onClick={onCreateStream}
-        className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover"
+        className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         Create Your First Stream
       </button>

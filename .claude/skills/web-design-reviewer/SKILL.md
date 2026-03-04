@@ -20,7 +20,7 @@ This skill enables visual inspection and validation of website design quality, i
 ### Required
 
 1. **Target website must be running**
-   - Local development server (e.g., `http://localhost:3000`)
+   - Local development server (e.g., `http://localhost:4000`)
    - Staging environment
    - Production environment (for read-only reviews)
 

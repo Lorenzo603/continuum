@@ -12,6 +12,11 @@ function getProvidedToken(request: NextRequest): string | null {
 }
 
 export function proxy(request: NextRequest) {
+  const disabled = process.env.ACCESS_TOKEN_CHECK_DISABLED === "true";
+  if (disabled) {
+    return NextResponse.next();
+  }
+
   const requiredToken = process.env.ACCESS_TOKEN;
 
   if (!requiredToken) {

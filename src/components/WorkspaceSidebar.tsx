@@ -46,7 +46,7 @@ export function WorkspaceSidebar() {
   };
 
   return (
-    <aside className="flex h-full w-60 flex-col border-r border-border/50 bg-surface/50">
+    <aside className="sticky top-0 flex h-screen w-60 flex-shrink-0 flex-col border-r border-border/50 bg-surface/50">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">
