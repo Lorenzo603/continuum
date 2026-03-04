@@ -112,7 +112,7 @@ export const StreamRow = memo(function StreamRow({
 
   return (
     <div
-      className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-card p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80"
+      className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-surface/50 p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80"
     >
       {/* Stream header */}
       <div className="flex items-center gap-2 mb-3">
