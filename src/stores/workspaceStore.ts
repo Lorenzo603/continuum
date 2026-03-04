@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { Workspace } from "@/types";
 
+const ACTIVE_WORKSPACE_KEY = "continuum:activeWorkspaceId";
+
 interface WorkspaceState {
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
@@ -31,10 +33,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const data: Workspace[] = await res.json();
       set({ workspaces: data, loading: false });
 
-      // Auto-select first workspace if none active
+      // Restore last selected workspace from localStorage, or auto-select first
       const current = get().activeWorkspaceId;
-      if ((!current || !data.find((w) => w.id === current)) && data.length > 0) {
-        set({ activeWorkspaceId: data[0].id });
+      const saved = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_WORKSPACE_KEY) : null;
+      const preferred = saved ?? current;
+      if (preferred && data.find((w) => w.id === preferred)) {
+        set({ activeWorkspaceId: preferred });
+      } else if (data.length > 0) {
+        const newId = data[0].id;
+        set({ activeWorkspaceId: newId });
+        if (typeof window !== "undefined") localStorage.setItem(ACTIVE_WORKSPACE_KEY, newId);
       }
     } catch (error) {
       set({
@@ -46,6 +54,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   setActiveWorkspace: (id) => {
     set({ activeWorkspaceId: id });
+    if (typeof window !== "undefined") localStorage.setItem(ACTIVE_WORKSPACE_KEY, id);
   },
 
   addWorkspace: async (name, description = null) => {
@@ -61,6 +70,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         workspaces: [...state.workspaces, workspace],
         activeWorkspaceId: workspace.id,
       }));
+      if (typeof window !== "undefined") localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspace.id);
       return workspace;
     } catch (error) {
       set({
@@ -100,7 +110,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     // If deleting active workspace, switch to another
     if (get().activeWorkspaceId === id) {
-      set({ activeWorkspaceId: filtered[0]?.id ?? null });
+      const newId = filtered[0]?.id ?? null;
+      set({ activeWorkspaceId: newId });
+      if (typeof window !== "undefined") {
+        if (newId) localStorage.setItem(ACTIVE_WORKSPACE_KEY, newId);
+        else localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+      }
     }
 
     try {
