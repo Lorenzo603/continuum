@@ -135,7 +135,7 @@ export const StreamRow = memo(function StreamRow({
         {hasChildren && (
           <button
             onClick={onToggleExpand}
-            className="flex-shrink-0 rounded p-0.5 text-muted transition-colors hover:text-foreground"
+            className="cursor-pointer flex-shrink-0 rounded p-0.5 text-muted transition-colors hover:text-foreground"
             aria-label={isExpanded ? "Collapse substreams" : "Expand substreams"}
           >
             <svg
@@ -188,7 +188,7 @@ export const StreamRow = memo(function StreamRow({
         <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => setIsAddingSubstream(true)}
-            className="rounded p-1 text-muted hover:text-foreground hover:bg-surface transition-colors"
+            className="cursor-pointer rounded p-1 text-muted hover:text-foreground hover:bg-surface transition-colors"
             title="Add substream"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -197,7 +197,7 @@ export const StreamRow = memo(function StreamRow({
           </button>
           <button
             onClick={onDelete}
-            className="rounded p-1 text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+            className="cursor-pointer rounded p-1 text-muted hover:text-danger hover:bg-danger/10 transition-colors"
             title="Delete stream"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -243,7 +243,7 @@ export const StreamRow = memo(function StreamRow({
 
             <button
               onClick={() => openCardEditor({ streamId: stream.id })}
-              className="flex min-h-[80px] min-w-[80px] flex-shrink-0 self-stretch items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5"
+              className="flex min-h-[80px] min-w-[80px] flex-shrink-0 self-stretch items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5 cursor-pointer"
             >
               <svg
                 className="h-5 w-5"

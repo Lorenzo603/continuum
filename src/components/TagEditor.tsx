@@ -67,7 +67,7 @@ export function TagEditor({ tags, onChange, disabled, compact }: TagEditorProps)
                   e.stopPropagation();
                   removeTag(tag);
                 }}
-                className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-primary/20 hover:text-primary"
+                className="cursor-pointer ml-0.5 rounded-full p-0.5 transition-colors hover:bg-primary/20 hover:text-primary"
                 aria-label={`Remove tag ${tag}`}
               >
                 <svg

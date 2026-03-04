@@ -175,7 +175,7 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
           </div>
           <button
             onClick={onClose}
-            className="flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-foreground hover:bg-surface"
+            className="cursor-pointer flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-foreground hover:bg-surface"
             aria-label="Close"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -203,7 +203,7 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
                 <button
                   key={card.id}
                   onClick={() => setSelectedId(card.id)}
-                  className={`flex-shrink-0 w-[200px] rounded-xl border p-3 text-left transition-all duration-150 ${
+                  className={`cursor-pointer flex-shrink-0 w-[200px] rounded-xl border p-3 text-left transition-all duration-150 ${
                     isSelected
                       ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/30"
                       : "border-border/40 bg-card/60 hover:border-border hover:bg-card/80"

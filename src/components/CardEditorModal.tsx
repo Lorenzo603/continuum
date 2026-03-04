@@ -109,7 +109,7 @@ function CardEditorModalInner() {
           </div>
           <button
             onClick={closeCardEditor}
-            className="flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-foreground hover:bg-surface"
+            className="cursor-pointer flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-foreground hover:bg-surface"
             aria-label="Close"
           >
             <svg
@@ -152,14 +152,14 @@ function CardEditorModalInner() {
             <button
               onClick={closeCardEditor}
               disabled={saving}
-              className="rounded-lg px-4 py-2 text-sm text-muted transition-colors hover:text-foreground hover:bg-surface"
+              className="cursor-pointer rounded-lg px-4 py-2 text-sm text-muted transition-colors hover:text-foreground hover:bg-surface"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving || !content.trim()}
-              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+              className="cursor-pointer rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
             >
               {saving ? "Saving…" : isEditing ? "Save New Version" : "Create Card"}
             </button>

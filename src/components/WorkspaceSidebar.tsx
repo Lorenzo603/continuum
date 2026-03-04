@@ -54,7 +54,7 @@ export function WorkspaceSidebar() {
         </h2>
         <button
           onClick={() => setIsCreating(true)}
-          className="rounded p-1 text-muted transition-colors hover:text-primary hover:bg-primary/10"
+          className="rounded p-1 text-muted transition-colors hover:text-primary hover:bg-primary/10 cursor-pointer"
           title="New workspace"
         >
           <svg
@@ -115,7 +115,7 @@ export function WorkspaceSidebar() {
                   e.stopPropagation();
                   handleDelete(ws.id, ws.name);
                 }}
-                className="rounded p-0.5 text-muted opacity-0 transition-all hover:text-danger group-hover:opacity-100"
+                className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-danger group-hover:opacity-100"
                 title="Delete workspace"
               >
                 <svg
@@ -165,7 +165,7 @@ export function WorkspaceSidebar() {
               <button
                 type="submit"
                 disabled={saving || !newName.trim()}
-                className="flex-1 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+                className="cursor-pointer flex-1 rounded-lg bg-primary px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
                 {saving ? "Creating…" : "Create"}
               </button>
@@ -176,7 +176,7 @@ export function WorkspaceSidebar() {
                   setNewName("");
                 }}
                 disabled={saving}
-                className="rounded-lg px-2 py-1 text-xs text-muted transition-colors hover:text-foreground"
+                className="cursor-pointer rounded-lg px-2 py-1 text-xs text-muted transition-colors hover:text-foreground"
               >
                 Cancel
               </button>

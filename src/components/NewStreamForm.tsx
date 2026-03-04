@@ -54,14 +54,14 @@ export function NewStreamForm({ parentStreamId, workspaceId, onCancel }: NewStre
         type="button"
         onClick={onCancel}
         disabled={saving}
-        className="rounded px-2.5 py-1 text-xs text-muted transition-colors hover:text-foreground"
+        className="cursor-pointer rounded px-2.5 py-1 text-xs text-muted transition-colors hover:text-foreground"
       >
         Cancel
       </button>
       <button
         type="submit"
         disabled={saving || !title.trim()}
-        className="rounded bg-primary px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+        className="cursor-pointer rounded bg-primary px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
       >
         {saving ? "Creating…" : "Create"}
       </button>
