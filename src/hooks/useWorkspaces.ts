@@ -10,6 +10,7 @@ export function useWorkspaces() {
     fetchWorkspaces,
     setActiveWorkspace,
     addWorkspace,
+    updateWorkspace,
     deleteWorkspace,
   } = useWorkspaceStore();
 
@@ -27,6 +28,7 @@ export function useWorkspaces() {
     error,
     setActiveWorkspace,
     addWorkspace,
+    updateWorkspace,
     deleteWorkspace,
     refetch: fetchWorkspaces,
   };
