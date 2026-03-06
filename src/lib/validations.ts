@@ -28,6 +28,7 @@ export const createStreamSchema = z.object({
 export const updateStreamSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   orderIndex: z.number().int().min(0).optional(),
+  status: z.enum(["active", "archived"]).optional(),
 });
 
 export const reorderStreamsSchema = z.object({

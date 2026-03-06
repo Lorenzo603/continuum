@@ -7,12 +7,16 @@ export interface Workspace {
   createdAt: string;
 }
 
+export type StreamStatus = "active" | "archived";
+
 export interface Stream {
   id: string;
   title: string;
   workspaceId: string;
   parentStreamId: string | null;
   orderIndex: number;
+  status: StreamStatus;
+  archivedAt: string | null;
   createdAt: string;
 }
 
@@ -70,6 +74,7 @@ export interface CreateStreamInput {
 export interface UpdateStreamInput {
   title?: string;
   orderIndex?: number;
+  status?: StreamStatus;
 }
 
 export interface CreateCardInput {

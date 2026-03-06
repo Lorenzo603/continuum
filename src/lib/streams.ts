@@ -11,6 +11,7 @@ export async function getTopLevelStreams(workspaceId: string) {
       and(
         eq(streams.workspaceId, workspaceId),
         isNull(streams.parentStreamId),
+        eq(streams.status, "active"),
       ),
     )
     .orderBy(asc(streams.orderIndex));
@@ -20,7 +21,7 @@ export async function getSubstreams(parentId: string) {
   return db
     .select()
     .from(streams)
-    .where(eq(streams.parentStreamId, parentId))
+    .where(and(eq(streams.parentStreamId, parentId), eq(streams.status, "active")))
     .orderBy(asc(streams.orderIndex));
 }
 
@@ -37,7 +38,7 @@ export async function getAllStreams(workspaceId: string) {
   return db
     .select()
     .from(streams)
-    .where(eq(streams.workspaceId, workspaceId))
+    .where(and(eq(streams.workspaceId, workspaceId), eq(streams.status, "active")))
     .orderBy(asc(streams.orderIndex));
 }
 
@@ -94,7 +95,7 @@ export async function createStream(data: {
 
 export async function updateStream(
   id: string,
-  data: { title?: string; orderIndex?: number }
+  data: { title?: string; orderIndex?: number; status?: string }
 ) {
   const result = db
     .update(streams)
@@ -119,4 +120,14 @@ export async function reorderStreams(orderedIds: string[]) {
 export async function deleteStream(id: string) {
   // Cascade delete is handled by foreign key constraint
   return db.delete(streams).where(eq(streams.id, id));
+}
+
+export async function archiveStream(id: string) {
+  const result = db
+    .update(streams)
+    .set({ status: "archived", archivedAt: new Date().toISOString() })
+    .where(eq(streams.id, id))
+    .returning();
+
+  return (await result)[0] ?? null;
 }

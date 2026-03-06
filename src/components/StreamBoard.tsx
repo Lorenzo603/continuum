@@ -31,7 +31,7 @@ import type { StreamNode } from "@/types";
 export function StreamBoard() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const { streams, loading, error } = useStreams(activeWorkspaceId);
-  const { deleteStream, reorderStreams } = useStreamStore();
+  const { deleteStream, archiveStream, reorderStreams } = useStreamStore();
   const { isCreatingStream, setCreatingStream } = useUIStore();
 
   const sensors = useSensors(
@@ -103,6 +103,7 @@ export function StreamBoard() {
               key={stream.id}
               node={stream}
               onDelete={deleteStream}
+              onArchive={archiveStream}
               onReorderChildren={reorderStreams}
             />
           ))}
@@ -145,10 +146,12 @@ export function StreamBoard() {
 function SortableStreamTree({
   node,
   onDelete,
+  onArchive,
   onReorderChildren,
 }: {
   node: StreamNode;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => Promise<void>;
   onReorderChildren: (parentStreamId: string | null, orderedIds: string[]) => Promise<void>;
 }) {
   const { expandedStreams, toggleStreamExpand } = useUIStore();
@@ -207,6 +210,7 @@ function SortableStreamTree({
         isExpanded={isExpanded}
         onToggleExpand={() => toggleStreamExpand(node.id)}
         onDelete={() => onDelete(node.id)}
+        onArchive={() => onArchive(node.id)}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
       {hasChildren && isExpanded && (
@@ -226,6 +230,7 @@ function SortableStreamTree({
                   key={child.id}
                   node={child}
                   onDelete={onDelete}
+                  onArchive={onArchive}
                   onReorderChildren={onReorderChildren}
                 />
               ))}

@@ -14,6 +14,7 @@ interface StreamState {
     data: { title?: string; orderIndex?: number }
   ) => Promise<void>;
   deleteStream: (id: string) => Promise<void>;
+  archiveStream: (id: string) => Promise<void>;
   reorderStreams: (
     parentStreamId: string | null,
     orderedIds: string[]
@@ -102,6 +103,25 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       set({
         streams: prev,
         error: error instanceof Error ? error.message : "Failed to delete stream",
+      });
+    }
+  },
+
+  archiveStream: async (id) => {
+    const prev = get().streams;
+    // Optimistic removal from tree
+    set({ streams: removeNodeFromTree(prev, id) });
+    try {
+      const res = await fetch(`/api/streams/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "archived" }),
+      });
+      if (!res.ok) throw new Error("Failed to archive stream");
+    } catch (error) {
+      set({
+        streams: prev,
+        error: error instanceof Error ? error.message : "Failed to archive stream",
       });
     }
   },

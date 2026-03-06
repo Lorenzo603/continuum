@@ -28,6 +28,8 @@ export const streams = pgTable("streams", {
     { onDelete: "cascade" },
   ),
   orderIndex: integer("order_index").notNull().default(0),
+  status: text("status").notNull().default("active"),
+  archivedAt: text("archived_at"),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

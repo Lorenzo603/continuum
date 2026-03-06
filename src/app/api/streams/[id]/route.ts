@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   getStreamById,
   updateStream,
+  archiveStream,
   deleteStream,
   getSubstreams,
 } from "@/lib/streams";
@@ -51,7 +52,9 @@ export async function PATCH(
       );
     }
 
-    const stream = await updateStream(id, parsed.data);
+    const stream = parsed.data.status === "archived"
+      ? await archiveStream(id)
+      : await updateStream(id, parsed.data);
     if (!stream) {
       return NextResponse.json({ error: "Stream not found" }, { status: 404 });
     }

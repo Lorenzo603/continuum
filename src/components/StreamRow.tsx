@@ -84,6 +84,7 @@ interface StreamRowProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onDelete: () => void;
+  onArchive: () => void;
   dragHandleProps?: Record<string, unknown>;
 }
 
@@ -93,6 +94,7 @@ export const StreamRow = memo(function StreamRow({
   isExpanded,
   onToggleExpand,
   onDelete,
+  onArchive,
   dragHandleProps,
 }: StreamRowProps) {
   const { cards, loading } = useCards(stream.id);
@@ -193,6 +195,15 @@ export const StreamRow = memo(function StreamRow({
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h4l3 9h10m-7-4h7m-3.5-3.5v7" />
+            </svg>
+          </button>
+          <button
+            onClick={onArchive}
+            className="cursor-pointer rounded p-1 text-muted hover:text-warning hover:bg-warning/10 transition-colors"
+            title="Archive stream"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
             </svg>
           </button>
           <button
