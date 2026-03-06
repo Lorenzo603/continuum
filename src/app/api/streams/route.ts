@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStreamTree, createStream } from "@/lib/streams";
+import { getStreamTree, getArchivedStreams, createStream } from "@/lib/streams";
 import { createStreamSchema } from "@/lib/validations";
 
 export async function GET(request: Request) {
@@ -15,7 +15,8 @@ export async function GET(request: Request) {
     }
 
     const tree = await getStreamTree(workspaceId);
-    return NextResponse.json(tree);
+    const archived = await getArchivedStreams(workspaceId);
+    return NextResponse.json({ tree, archived });
   } catch (error) {
     console.error("Failed to fetch streams:", error);
     return NextResponse.json(

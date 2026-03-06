@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import type { StreamNode } from "@/types";
+import type { Stream, StreamNode } from "@/types";
 
 interface StreamState {
   streams: StreamNode[];
+  archivedStreams: Stream[];
   currentWorkspaceId: string | null;
   loading: boolean;
   error: string | null;
@@ -15,6 +16,7 @@ interface StreamState {
   ) => Promise<void>;
   deleteStream: (id: string) => Promise<void>;
   archiveStream: (id: string) => Promise<void>;
+  unarchiveStream: (id: string) => Promise<void>;
   reorderStreams: (
     parentStreamId: string | null,
     orderedIds: string[]
@@ -23,6 +25,7 @@ interface StreamState {
 
 export const useStreamStore = create<StreamState>((set, get) => ({
   streams: [],
+  archivedStreams: [],
   currentWorkspaceId: null,
   loading: false,
   error: null,
@@ -33,7 +36,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       const res = await fetch(`/api/streams?workspaceId=${encodeURIComponent(workspaceId)}`);
       if (!res.ok) throw new Error("Failed to fetch streams");
       const data = await res.json();
-      set({ streams: data, loading: false });
+      set({ streams: data.tree, archivedStreams: data.archived, loading: false });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Unknown error",
@@ -118,10 +121,35 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         body: JSON.stringify({ status: "archived" }),
       });
       if (!res.ok) throw new Error("Failed to archive stream");
+      // Refetch to update archived list
+      const wsId = get().currentWorkspaceId;
+      if (wsId) await get().fetchStreams(wsId);
     } catch (error) {
       set({
         streams: prev,
         error: error instanceof Error ? error.message : "Failed to archive stream",
+      });
+    }
+  },
+
+  unarchiveStream: async (id) => {
+    const prevArchived = get().archivedStreams;
+    // Optimistic removal from archived list
+    set({ archivedStreams: prevArchived.filter((s) => s.id !== id) });
+    try {
+      const res = await fetch(`/api/streams/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
+      if (!res.ok) throw new Error("Failed to unarchive stream");
+      // Refetch to get the restored stream in the active tree
+      const wsId = get().currentWorkspaceId;
+      if (wsId) await get().fetchStreams(wsId);
+    } catch (error) {
+      set({
+        archivedStreams: prevArchived,
+        error: error instanceof Error ? error.message : "Failed to unarchive stream",
       });
     }
   },

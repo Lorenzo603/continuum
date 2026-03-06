@@ -3,6 +3,7 @@ import {
   getStreamById,
   updateStream,
   archiveStream,
+  unarchiveStream,
   deleteStream,
   getSubstreams,
 } from "@/lib/streams";
@@ -52,9 +53,14 @@ export async function PATCH(
       );
     }
 
-    const stream = parsed.data.status === "archived"
-      ? await archiveStream(id)
-      : await updateStream(id, parsed.data);
+    let stream;
+    if (parsed.data.status === "archived") {
+      stream = await archiveStream(id);
+    } else if (parsed.data.status === "active") {
+      stream = await unarchiveStream(id);
+    } else {
+      stream = await updateStream(id, parsed.data);
+    }
     if (!stream) {
       return NextResponse.json({ error: "Stream not found" }, { status: 404 });
     }

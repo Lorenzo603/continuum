@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -26,12 +26,12 @@ import { StreamRow } from "./StreamRow";
 import { NewStreamForm } from "./NewStreamForm";
 import { EmptyState } from "./EmptyState";
 import { CardEditorModal } from "./CardEditorModal";
-import type { StreamNode } from "@/types";
+import type { Stream, StreamNode } from "@/types";
 
 export function StreamBoard() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const { streams, loading, error } = useStreams(activeWorkspaceId);
-  const { deleteStream, archiveStream, reorderStreams } = useStreamStore();
+  const { deleteStream, archiveStream, unarchiveStream, reorderStreams, archivedStreams } = useStreamStore();
   const { isCreatingStream, setCreatingStream } = useUIStore();
 
   const sensors = useSensors(
@@ -83,7 +83,17 @@ export function StreamBoard() {
   }
 
   if (streams.length === 0 && !isCreatingStream) {
-    return <EmptyState onCreateStream={() => setCreatingStream(true)} />;
+    return (
+      <>
+        <EmptyState onCreateStream={() => setCreatingStream(true)} />
+        {archivedStreams.length > 0 && (
+          <ArchivedStreamsSection
+            streams={archivedStreams}
+            onUnarchive={unarchiveStream}
+          />
+        )}
+      </>
+    );
   }
 
   return (
@@ -139,6 +149,13 @@ export function StreamBoard() {
       )}
 
       <CardEditorModal />
+
+      {archivedStreams.length > 0 && (
+        <ArchivedStreamsSection
+          streams={archivedStreams}
+          onUnarchive={unarchiveStream}
+        />
+      )}
     </div>
   );
 }
@@ -258,6 +275,68 @@ function StreamBoardLoadingState() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ArchivedStreamsSection({
+  streams,
+  onUnarchive,
+}: {
+  streams: Stream[];
+  onUnarchive: (id: string) => Promise<void>;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="mt-6 border-t border-border/40 pt-4">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <svg
+          className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+        </svg>
+        <span className="font-medium">Archived Streams</span>
+        <span className="rounded-full bg-surface px-2 py-0.5 text-xs">{streams.length}</span>
+      </button>
+
+      {isExpanded && (
+        <div className="mt-3 flex flex-col gap-2">
+          {streams.map((stream) => (
+            <div
+              key={stream.id}
+              className="flex items-center justify-between rounded-lg border border-border/40 bg-surface/30 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-1.5 w-1.5 rounded-full bg-muted/40 flex-shrink-0" />
+                <span className="text-sm text-muted">{stream.title}</span>
+                {stream.archivedAt && (
+                  <span className="text-xs text-muted/60">
+                    archived {new Date(stream.archivedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => onUnarchive(stream.id)}
+                className="cursor-pointer rounded px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                title="Unarchive stream"
+              >
+                Unarchive
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

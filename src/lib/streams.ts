@@ -1,5 +1,5 @@
 import { db, streams } from "@/db";
-import { eq, asc, isNull, and } from "drizzle-orm";
+import { eq, asc, isNull, and, desc } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import type { Stream, StreamNode } from "@/types";
 
@@ -126,6 +126,33 @@ export async function archiveStream(id: string) {
   const result = db
     .update(streams)
     .set({ status: "archived", archivedAt: new Date().toISOString() })
+    .where(eq(streams.id, id))
+    .returning();
+
+  return (await result)[0] ?? null;
+}
+
+export async function getArchivedStreams(workspaceId: string) {
+  return db
+    .select()
+    .from(streams)
+    .where(and(eq(streams.workspaceId, workspaceId), eq(streams.status, "archived")))
+    .orderBy(desc(streams.archivedAt));
+}
+
+export async function unarchiveStream(id: string) {
+  const stream = await getStreamById(id);
+  if (!stream) return null;
+
+  // Place at the bottom of the active list
+  const siblings = stream.parentStreamId
+    ? await getSubstreams(stream.parentStreamId)
+    : await getTopLevelStreams(stream.workspaceId);
+  const orderIndex = siblings.length;
+
+  const result = db
+    .update(streams)
+    .set({ status: "active", archivedAt: null, orderIndex })
     .where(eq(streams.id, id))
     .returning();
 
