@@ -37,7 +37,7 @@ export const cards = sqliteTable(
     metadata: text("metadata", { mode: "json" }).$type<{
       tags?: string[];
       dueDate?: string;
-      status?: "completed" | "waiting" | "in-progress" | "action-required" | "monitor" | "to-update";
+      status?: "completed" | "waiting" | "in-progress" | "action-required" | "monitor" | "to-update" | "backlog";
     } | null>(),
     createdAt: text("created_at")
       .notNull()

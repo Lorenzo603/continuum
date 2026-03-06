@@ -52,7 +52,8 @@ export const cards = pgTable(
         | "in-progress"
         | "action-required"
         | "monitor"
-        | "to-update";
+        | "to-update"
+        | "backlog";
     } | null>(),
     createdAt: text("created_at")
       .notNull()

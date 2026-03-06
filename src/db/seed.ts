@@ -19,7 +19,8 @@ type StatusValue =
   | "in-progress"
   | "action-required"
   | "monitor"
-  | "to-update";
+  | "to-update"
+  | "backlog";
 
 // ---------------------------------------------------------------------------
 // Initialise db + table references for the active dialect

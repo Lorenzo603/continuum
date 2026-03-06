@@ -14,6 +14,7 @@ const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> =
   monitor: { dot: "bg-[#a78bfa]", bg: "bg-[#a78bfa]/10", text: "text-[#a78bfa]" },
   "to-update": { dot: "bg-[#f472b6]", bg: "bg-[#f472b6]/10", text: "text-[#f472b6]" },
   completed: { dot: "bg-muted", bg: "bg-muted/10", text: "text-muted" },
+  backlog: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-400" },
 };
 
 interface CardItemProps {

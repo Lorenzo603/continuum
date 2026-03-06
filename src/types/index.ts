@@ -26,7 +26,7 @@ export interface Card {
   createdAt: string;
 }
 
-export type CardStatus = "completed" | "waiting" | "in-progress" | "action-required" | "monitor" | "to-update";
+export type CardStatus = "completed" | "waiting" | "in-progress" | "action-required" | "monitor" | "to-update" | "backlog";
 
 export const CARD_STATUSES: { value: CardStatus; label: string }[] = [
   { value: "in-progress", label: "In Progress" },
@@ -35,6 +35,7 @@ export const CARD_STATUSES: { value: CardStatus; label: string }[] = [
   { value: "waiting", label: "Waiting" },
   { value: "monitor", label: "Monitor" },
   { value: "completed", label: "Completed" },
+  { value: "backlog", label: "Backlog" },
 ];
 
 export interface CardMetadata {
