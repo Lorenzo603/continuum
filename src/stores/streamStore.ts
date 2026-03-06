@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Stream, StreamNode } from "@/types";
+import { useUIStore } from "@/stores/uiStore";
 
 interface StreamState {
   streams: StreamNode[];
@@ -54,6 +55,13 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         body: JSON.stringify({ title, workspaceId, parentStreamId }),
       });
       if (!res.ok) throw new Error("Failed to create stream");
+      // Expand parent so the new substream is immediately visible
+      if (parentStreamId) {
+        const { expandedStreams } = useUIStore.getState();
+        if (!expandedStreams.has(parentStreamId)) {
+          useUIStore.getState().toggleStreamExpand(parentStreamId);
+        }
+      }
       // Refetch the full tree to get proper nesting
       await get().fetchStreams(workspaceId);
     } catch (error) {
