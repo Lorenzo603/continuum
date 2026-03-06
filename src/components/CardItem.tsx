@@ -238,6 +238,8 @@ function StatusDropdown({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -251,6 +253,14 @@ function StatusDropdown({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen((o) => !o);
+  };
+
   const colors = status
     ? STATUS_COLORS[status] ?? { dot: "bg-muted", bg: "bg-muted/10", text: "text-muted" }
     : null;
@@ -261,7 +271,8 @@ function StatusDropdown({
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={buttonRef}
+        onClick={handleToggle}
         className={`cursor-pointer inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
           colors
             ? `${colors.bg} ${colors.text} hover:brightness-110`
@@ -276,8 +287,11 @@ function StatusDropdown({
         </svg>
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border/60 bg-card shadow-xl shadow-black/20 py-1 animate-in fade-in zoom-in-95 duration-100">
+      {open && pos && (
+        <div
+          className="fixed z-50 min-w-[140px] rounded-lg border border-border/60 bg-card shadow-xl shadow-black/20 py-1 animate-in fade-in zoom-in-95 duration-100"
+          style={{ top: pos.top, left: pos.left }}
+        >
           {CARD_STATUSES.map((s) => {
             const sc = STATUS_COLORS[s.value];
             const isActive = status === s.value;
