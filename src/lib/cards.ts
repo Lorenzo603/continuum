@@ -40,6 +40,10 @@ export async function createCard(data: {
   // Check if there's already an editable card and mark it non-editable
   const existingEditable = await getLatestCard(data.streamId);
   const version = existingEditable ? existingEditable.version + 1 : 1;
+  const completedPreviousMetadata: CardMetadata = {
+    ...(existingEditable?.metadata ?? {}),
+    status: "completed",
+  };
 
   const values = {
     id,
@@ -55,7 +59,10 @@ export async function createCard(data: {
     return db.transaction((tx: any) => {
       if (existingEditable) {
         tx.update(cards)
-          .set({ isEditable: false })
+          .set({
+            isEditable: false,
+            metadata: completedPreviousMetadata,
+          })
           .where(eq(cards.id, existingEditable.id))
           .run();
       }
@@ -68,7 +75,10 @@ export async function createCard(data: {
     if (existingEditable) {
       await tx
         .update(cards)
-        .set({ isEditable: false })
+        .set({
+          isEditable: false,
+          metadata: completedPreviousMetadata,
+        })
         .where(eq(cards.id, existingEditable.id));
     }
     const [result] = await tx.insert(cards).values(values).returning();
