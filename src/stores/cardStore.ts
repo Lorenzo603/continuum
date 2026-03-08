@@ -77,9 +77,18 @@ export const useCardStore = create<CardState>((set, get) => ({
       metadata: metadata ?? null,
       createdAt: new Date().toISOString(),
     };
-    const optimisticCards = prev.map((c) =>
-      c.isEditable ? { ...c, isEditable: false as const } : c
-    );
+    const optimisticCards = prev.map((c) => {
+      if (!c.isEditable) return c;
+      const completedMetadata: CardMetadata = {
+        ...(c.metadata ?? {}),
+        status: "completed",
+      };
+      return {
+        ...c,
+        isEditable: false as const,
+        metadata: completedMetadata,
+      };
+    });
     set((state) => ({
       _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
       cardsByStream: {
@@ -97,16 +106,27 @@ export const useCardStore = create<CardState>((set, get) => ({
       if (!res.ok) throw new Error("Failed to create card");
       const newCard: Card = await res.json();
 
-      // Replace the optimistic temp card with the real server card
-      set((state) => {
-        const current = state.cardsByStream[streamId] ?? [];
-        const updated = current.map((c) =>
-          c.id === optimisticCard.id ? newCard : c
-        );
-        return {
-          cardsByStream: { ...state.cardsByStream, [streamId]: updated },
-        };
+      // Re-fetch to ensure server-side status updates (previous card -> completed) are reflected
+      const cardsRes = await fetch(`/api/streams/${streamId}/cards`, {
+        cache: "no-store",
       });
+      if (cardsRes.ok) {
+        const data = await cardsRes.json();
+        set((state) => ({
+          cardsByStream: { ...state.cardsByStream, [streamId]: data },
+        }));
+      } else {
+        // Fallback: at least replace the optimistic temp card with the real server card
+        set((state) => {
+          const current = state.cardsByStream[streamId] ?? [];
+          const updated = current.map((c) =>
+            c.id === optimisticCard.id ? newCard : c
+          );
+          return {
+            cardsByStream: { ...state.cardsByStream, [streamId]: updated },
+          };
+        });
+      }
     } catch (error) {
       // Rollback on POST failure
       set((state) => ({
