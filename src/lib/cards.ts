@@ -3,6 +3,8 @@ import { eq, asc, desc, and } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import type { CardMetadata } from "@/types";
 
+type TransactionClient = typeof db;
+
 export async function getCards(streamId: string) {
   return db
     .select()
@@ -56,7 +58,7 @@ export async function createCard(data: {
 
   if (DB_TYPE === "sqlite") {
     // better-sqlite3: synchronous transaction with .run() / .get()
-    return db.transaction((tx) => {
+    return db.transaction((tx: TransactionClient) => {
       if (existingEditable) {
         tx.update(cards)
           .set({
@@ -71,7 +73,7 @@ export async function createCard(data: {
   }
 
   // PostgreSQL: async transaction
-  return db.transaction(async (tx) => {
+  return db.transaction(async (tx: TransactionClient) => {
     if (existingEditable) {
       await tx
         .update(cards)
@@ -121,7 +123,7 @@ export async function deleteCard(cardId: string) {
 
   if (DB_TYPE === "sqlite") {
     // better-sqlite3: synchronous transaction
-    return db.transaction((tx) => {
+    return db.transaction((tx: TransactionClient) => {
       tx.delete(cards).where(eq(cards.id, cardId)).run();
 
       const previous = tx
@@ -144,7 +146,7 @@ export async function deleteCard(cardId: string) {
   }
 
   // PostgreSQL: async transaction
-  return db.transaction(async (tx) => {
+  return db.transaction(async (tx: TransactionClient) => {
     await tx.delete(cards).where(eq(cards.id, cardId));
 
     const previous = await tx
