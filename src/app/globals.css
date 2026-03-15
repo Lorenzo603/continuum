@@ -11,7 +11,7 @@
 
   --background: #f7f5f2;
   --foreground: #1c1917;
-  --border-val: #e2ddd6;
+  --border-val: #d4cdc3;
   --card-val: #fefdfb;
   --card-hover-val: #f5f0ea;
   --surface-val: #efebe5;
@@ -27,7 +27,7 @@
 html.dark {
   --background: #0c0b06;
   --foreground: #dfdcd6;
-  --border-val: #1f1b2e;
+  --border-val: #2e2942;
   --card-val: #15151f;
   --card-hover-val: #181624;
   --surface-val: #0f0e18;

@@ -98,6 +98,9 @@ export function StreamBoard() {
 
   return (
     <div className="flex flex-col divide-y divide-border/30">
+      <div className="pb-4">
+        <span className="text-xs text-muted font-medium">{streams.length} {streams.length === 1 ? 'stream' : 'streams'}</span>
+      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
