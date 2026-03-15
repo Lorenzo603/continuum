@@ -54,13 +54,6 @@ function StripScrollbar({ stripRef }: { stripRef: React.RefObject<HTMLDivElement
     };
   }, [stripRef, sync]);
 
-  // Re-sync once track element renders (after visible becomes true)
-  useEffect(() => {
-    if (visible && trackRef.current) {
-      sync();
-    }
-  }, [visible, sync]);
-
   const onThumbMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const strip = stripRef.current;

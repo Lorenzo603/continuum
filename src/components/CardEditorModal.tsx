@@ -9,7 +9,6 @@ import { toast } from "sonner";
 
 export function CardEditorModal() {
   const modal = useUIStore((s) => s.cardEditorModal);
-  const closeCardEditor = useUIStore((s) => s.closeCardEditor);
 
   if (!modal) return null;
 

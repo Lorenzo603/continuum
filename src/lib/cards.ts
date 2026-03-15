@@ -56,7 +56,7 @@ export async function createCard(data: {
 
   if (DB_TYPE === "sqlite") {
     // better-sqlite3: synchronous transaction with .run() / .get()
-    return db.transaction((tx: any) => {
+    return db.transaction((tx) => {
       if (existingEditable) {
         tx.update(cards)
           .set({
@@ -71,7 +71,7 @@ export async function createCard(data: {
   }
 
   // PostgreSQL: async transaction
-  return db.transaction(async (tx: any) => {
+  return db.transaction(async (tx) => {
     if (existingEditable) {
       await tx
         .update(cards)
@@ -121,7 +121,7 @@ export async function deleteCard(cardId: string) {
 
   if (DB_TYPE === "sqlite") {
     // better-sqlite3: synchronous transaction
-    return db.transaction((tx: any) => {
+    return db.transaction((tx) => {
       tx.delete(cards).where(eq(cards.id, cardId)).run();
 
       const previous = tx
@@ -144,7 +144,7 @@ export async function deleteCard(cardId: string) {
   }
 
   // PostgreSQL: async transaction
-  return db.transaction(async (tx: any) => {
+  return db.transaction(async (tx) => {
     await tx.delete(cards).where(eq(cards.id, cardId));
 
     const previous = await tx

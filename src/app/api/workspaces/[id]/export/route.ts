@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getWorkspaceById } from "@/lib/workspaces";
 import { getAllStreams } from "@/lib/streams";
 import { getCards } from "@/lib/cards";
+import type { Stream } from "@/types";
 
 export async function GET(
   _request: Request,
@@ -21,7 +22,7 @@ export async function GET(
     const streams = await getAllStreams(id);
 
     const streamsWithCards = await Promise.all(
-      streams.map(async (stream) => {
+      streams.map(async (stream: Stream) => {
         const cards = await getCards(stream.id);
         return { ...stream, cards };
       })

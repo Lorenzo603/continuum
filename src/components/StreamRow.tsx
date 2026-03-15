@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { useCards } from "@/hooks/useCards";
 import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";

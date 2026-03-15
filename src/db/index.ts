@@ -1,25 +1,24 @@
 import { DB_TYPE, SQLITE_PATH, DATABASE_URL } from "./config";
 import * as sqliteSchema from "./schema.sqlite";
 import * as pgSchema from "./schema.pg";
+import Database from "better-sqlite3";
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
+import { Pool } from "pg";
+import { drizzle as drizzlePostgres } from "drizzle-orm/node-postgres";
+import path from "path";
 
 // ---------------------------------------------------------------------------
 // Initialise the correct Drizzle database instance based on DB_TYPE
 // ---------------------------------------------------------------------------
 
 function initSqlite() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Database = require("better-sqlite3");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/better-sqlite3");
-  const path = require("path") as typeof import("path");
-
   const dbPath = path.resolve(process.cwd(), SQLITE_PATH);
   const sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
 
   return {
-    db: drizzle(sqlite, { schema: sqliteSchema }),
+    db: drizzleSqlite(sqlite, { schema: sqliteSchema }),
     workspaces: sqliteSchema.workspaces,
     streams: sqliteSchema.streams,
     cards: sqliteSchema.cards,
@@ -27,11 +26,6 @@ function initSqlite() {
 }
 
 function initPostgres() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Pool } = require("pg");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/node-postgres");
-
   if (!DATABASE_URL) {
     throw new Error(
       "DATABASE_URL is required when DB_TYPE=postgres. Set it in your .env file.",
@@ -41,7 +35,7 @@ function initPostgres() {
   const pool = new Pool({ connectionString: DATABASE_URL });
 
   return {
-    db: drizzle(pool, { schema: pgSchema }),
+    db: drizzlePostgres(pool, { schema: pgSchema }),
     workspaces: pgSchema.workspaces,
     streams: pgSchema.streams,
     cards: pgSchema.cards,

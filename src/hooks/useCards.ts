@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useCardStore } from "@/stores/cardStore";
 
 const EMPTY_CARDS: never[] = [];
