@@ -25,10 +25,10 @@
 
 /* ── Dark mode ── */
 html.dark {
-  --background: #0c0b12;
+  --background: #0c0b06;
   --foreground: #dfdcd6;
   --border-val: #1f1b2e;
-  --card-val: #11101b;
+  --card-val: #15151f;
   --card-hover-val: #181624;
   --surface-val: #0f0e18;
   --muted-val: #8b869c;

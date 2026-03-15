@@ -121,8 +121,6 @@ export const StreamRow = memo(function StreamRow({
           </button>
         )}
 
-        <div className="h-1.5 w-1.5 rounded-full bg-primary/50 flex-shrink-0" />
-
         {isEditingTitle ? (
           <input
             value={titleDraft}
