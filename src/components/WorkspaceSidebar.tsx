@@ -142,15 +142,15 @@ export function WorkspaceSidebar() {
               }}
               className={`group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mb-0.5 ${
                 ws.id === activeWorkspaceId
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground/80 hover:bg-card hover:text-foreground"
+                  ? "bg-card text-foreground font-medium"
+                  : "text-foreground/70 hover:bg-card-hover hover:text-foreground"
               } ${isEditing ? "cursor-default" : "cursor-pointer"}`}
             >
               <div
                 className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${
                   ws.id === activeWorkspaceId
-                    ? "bg-primary/20 text-primary"
-                    : "bg-border/50 text-muted"
+                    ? "bg-primary/15 text-primary"
+                    : "bg-surface text-muted"
                 }`}
               >
                 {ws.name.charAt(0).toUpperCase()}

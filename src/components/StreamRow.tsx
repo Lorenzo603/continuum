@@ -114,7 +114,7 @@ export const StreamRow = memo(function StreamRow({
 
   return (
     <div
-      className="group rounded-xl border border-border/60 border-l-[3px] border-l-primary/30 bg-surface/50 p-4 pl-5 shadow-sm transition-all hover:shadow-md hover:border-border/80"
+      className="group rounded-lg border border-border/50 bg-card p-4 transition-colors hover:border-border"
     >
       {/* Stream header */}
       <div className="flex items-center gap-2 mb-3">
@@ -254,7 +254,7 @@ export const StreamRow = memo(function StreamRow({
 
             <button
               onClick={() => openCardEditor({ streamId: stream.id })}
-              className="flex min-h-[80px] min-w-[80px] flex-shrink-0 self-stretch items-center justify-center rounded-xl border-2 border-dashed border-border/40 text-muted/50 transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5 cursor-pointer"
+              className="flex min-h-[60px] min-w-[60px] flex-shrink-0 self-stretch items-center justify-center rounded-lg border border-dashed border-border/40 text-muted/40 transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
             >
               <svg
                 className="h-5 w-5"

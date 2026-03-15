@@ -129,7 +129,7 @@ export function StreamBoard() {
       ) : (
         <button
           onClick={() => setCreatingStream(true)}
-          className="mt-1 flex items-center gap-2 rounded-xl border-2 border-dashed border-border/50 px-4 py-3.5 text-sm text-muted transition-all hover:border-primary/40 hover:text-primary hover:bg-primary/5 cursor-pointer"
+          className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-4 py-3 text-sm text-muted transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
         >
           <svg
             className="h-4 w-4"

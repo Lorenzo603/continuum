@@ -37,7 +37,7 @@ export function NewStreamForm({ parentStreamId, workspaceId, onCancel }: NewStre
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-2 rounded-xl border border-primary/30 bg-card p-3 shadow-sm"
+      className="flex items-center gap-2 rounded-lg border border-primary/25 bg-card p-3"
     >
       <input
         value={title}

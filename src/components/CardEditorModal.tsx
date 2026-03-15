@@ -105,10 +105,10 @@ function CardEditorModalInner() {
       role="dialog"
       aria-modal="true"
       aria-label={isEditing ? "Edit Card" : "New Card"}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-150"
       onClick={(e) => { if (e.target === backdropRef.current && !saving) closeCardEditor(); }}
     >
-      <div className="relative w-full max-w-2xl mx-4 rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/30 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl mx-4 rounded-xl border border-border/50 bg-card shadow-xl animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
           <div className="min-w-0">

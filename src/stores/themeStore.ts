@@ -12,15 +12,18 @@ interface ThemeState {
 function applyTheme(theme: Theme) {
   if (typeof document === "undefined") return;
   const html = document.documentElement;
-  html.classList.remove("dark", "light");
-  html.classList.add(theme);
+  if (theme === "dark") {
+    html.classList.add("dark");
+  } else {
+    html.classList.remove("dark");
+  }
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  // Always start as "dark" to match server-rendered HTML and avoid hydration mismatch.
-  // The inline script in layout.tsx handles the visual class so there's no flash.
+  // Default "light" matches server-rendered HTML (no class = light mode).
+  // The inline script in layout.tsx adds "dark" class if saved, avoiding flash.
   // Call hydrateTheme() in a useEffect to sync React state after mount.
-  theme: "dark",
+  theme: "light",
 
   toggleTheme: () => {
     const next = get().theme === "dark" ? "light" : "dark";
