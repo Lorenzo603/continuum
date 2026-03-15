@@ -97,7 +97,7 @@ export function StreamBoard() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col divide-y divide-border/30">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -129,7 +129,7 @@ export function StreamBoard() {
       ) : (
         <button
           onClick={() => setCreatingStream(true)}
-          className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-4 py-3 text-sm text-muted transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
+          className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-4 py-3 text-sm text-muted transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
         >
           <svg
             className="h-4 w-4"
@@ -220,7 +220,7 @@ function SortableStreamTree({
   );
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="py-5 first:pt-0">
       <StreamRow
         stream={node}
         hasChildren={hasChildren}
@@ -231,7 +231,7 @@ function SortableStreamTree({
         dragHandleProps={{ ...attributes, ...listeners }}
       />
       {hasChildren && isExpanded && (
-        <div className="ml-5 border-l-2 border-primary/15 pl-4 mt-2 flex flex-col gap-3">
+        <div className="ml-6 border-l border-border/40 pl-5 mt-3 flex flex-col gap-6">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

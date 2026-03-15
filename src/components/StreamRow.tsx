@@ -9,63 +9,30 @@ import { NewStreamForm } from "./NewStreamForm";
 import { StreamCardsModal } from "./StreamCardsModal";
 import type { StreamNode, Card } from "@/types";
 
-const SLIVER_WIDTH = 28; // px visible per collapsed card
-
 /**
- * Renders a compact fanned stack of older cards with a "View All" button
- * that opens the StreamCardsModal.
+ * Compact indicator for older card versions, opens the full history modal.
  */
-function CollapsedCardStack({
-  cards,
+function OlderVersionsIndicator({
+  count,
   allCards,
   streamTitle,
 }: {
-  cards: Card[];
+  count: number;
   allCards: Card[];
   streamTitle: string;
 }) {
   const [showModal, setShowModal] = useState(false);
-  const collapsedWidth = (cards.length - 1) * SLIVER_WIDTH + 64;
 
   return (
     <>
-      <div
-        className="relative flex-shrink-0 self-stretch"
-        style={{ width: collapsedWidth }}
-        title={`${cards.length} older version${cards.length !== 1 ? "s" : ""}`}
+      <button
+        onClick={() => setShowModal(true)}
+        className="flex-shrink-0 self-stretch flex items-center rounded-lg px-4 text-xs text-muted transition-colors hover:text-primary hover:bg-surface cursor-pointer"
       >
-        {/* "View All" button */}
-        <button
-          onClick={() => setShowModal(true)}
-          className="absolute inset-0 z-50 flex items-center justify-center cursor-pointer"
-        >
-          <span className="rounded-full bg-primary/90 px-3 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-sm transition-all hover:bg-primary hover:scale-105">
-            View all ({cards.length})
-          </span>
-        </button>
-
-        <div className="relative flex h-full overflow-hidden">
-          {cards.map((card, index) => (
-            <div
-              key={card.id}
-              className="flex-shrink-0"
-              style={{
-                width: index < cards.length - 1 ? SLIVER_WIDTH : 64,
-                overflow: "hidden",
-                zIndex: index,
-              }}
-            >
-              <div className="min-w-[280px] h-full rounded-xl border border-border/60 bg-card/40 opacity-70 p-3">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="inline-flex items-center rounded-full bg-surface px-1.5 py-0.5 text-[9px] font-medium text-muted">
-                    {card.version}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+        <span className="whitespace-nowrap">
+          +{count} older {count === 1 ? "version" : "versions"}
+        </span>
+      </button>
 
       {showModal && (
         <StreamCardsModal
@@ -113,11 +80,9 @@ export const StreamRow = memo(function StreamRow({
   };
 
   return (
-    <div
-      className="group rounded-lg border border-border/50 bg-card p-4 transition-colors hover:border-border"
-    >
+    <div className="group">
       {/* Stream header */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         {/* Drag handle */}
         <button
           {...dragHandleProps}
@@ -235,8 +200,8 @@ export const StreamRow = memo(function StreamRow({
           <>
             {/* Collapsed card stack (cards beyond the last 3) */}
             {cards.length > 3 && (
-              <CollapsedCardStack
-                cards={cards.slice(0, cards.length - 3)}
+              <OlderVersionsIndicator
+                count={cards.length - 3}
                 allCards={cards}
                 streamTitle={stream.title}
               />
