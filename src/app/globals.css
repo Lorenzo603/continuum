@@ -25,18 +25,18 @@
 
 /* ── Dark mode ── */
 html.dark {
-  --background: #13111a;
-  --foreground: #eae7e1;
-  --border-val: #28233a;
-  --card-val: #1a172a;
-  --card-hover-val: #211e30;
-  --surface-val: #16132a;
-  --muted-val: #948fa4;
-  --primary-val: #818cf8;
-  --primary-hover-val: #a5b4fc;
-  --danger-val: #ef4444;
-  --success-val: #22c55e;
-  --warning-val: #eab308;
+  --background: #0c0b12;
+  --foreground: #dfdcd6;
+  --border-val: #1f1b2e;
+  --card-val: #11101b;
+  --card-hover-val: #181624;
+  --surface-val: #0f0e18;
+  --muted-val: #8b869c;
+  --primary-val: #7c86d4;
+  --primary-hover-val: #949cdb;
+  --danger-val: #d4544f;
+  --success-val: #3da856;
+  --warning-val: #c49b2e;
 }
 
 @theme {

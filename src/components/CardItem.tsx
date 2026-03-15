@@ -11,8 +11,8 @@ const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> =
   "in-progress": { dot: "bg-success", bg: "bg-success/10", text: "text-success" },
   "action-required": { dot: "bg-warning", bg: "bg-warning/10", text: "text-warning" },
   waiting: { dot: "bg-primary", bg: "bg-primary/10", text: "text-primary" },
-  monitor: { dot: "bg-[#a78bfa]", bg: "bg-[#a78bfa]/10", text: "text-[#a78bfa]" },
-  "to-update": { dot: "bg-[#f472b6]", bg: "bg-[#f472b6]/10", text: "text-[#f472b6]" },
+  monitor: { dot: "bg-[#9284c8]", bg: "bg-[#9284c8]/10", text: "text-[#9284c8]" },
+  "to-update": { dot: "bg-[#c87da0]", bg: "bg-[#c87da0]/10", text: "text-[#c87da0]" },
   completed: { dot: "bg-muted", bg: "bg-muted/10", text: "text-muted" },
   backlog: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-400" },
 };

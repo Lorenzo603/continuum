@@ -7,9 +7,9 @@ import { CARD_STATUSES } from "@/types";
 const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
   "in-progress": { dot: "bg-success", bg: "bg-success/10", text: "text-success" },
   "action-required": { dot: "bg-warning", bg: "bg-warning/10", text: "text-warning" },
-  "to-update": { dot: "bg-[#f472b6]", bg: "bg-[#f472b6]/10", text: "text-[#f472b6]" },
+  "to-update": { dot: "bg-[#c87da0]", bg: "bg-[#c87da0]/10", text: "text-[#c87da0]" },
   waiting: { dot: "bg-primary", bg: "bg-primary/10", text: "text-primary" },
-  monitor: { dot: "bg-[#a78bfa]", bg: "bg-[#a78bfa]/10", text: "text-[#a78bfa]" },
+  monitor: { dot: "bg-[#9284c8]", bg: "bg-[#9284c8]/10", text: "text-[#9284c8]" },
   completed: { dot: "bg-muted", bg: "bg-muted/10", text: "text-muted" },
 };
 
