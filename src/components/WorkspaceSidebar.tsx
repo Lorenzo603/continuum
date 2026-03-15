@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useThemeStore, hydrateTheme } from "@/stores/themeStore";
+import { exportWorkspaceToJson } from "@/lib/exportWorkspace";
 import { toast } from "sonner";
 
 export function WorkspaceSidebar() {
@@ -22,11 +23,28 @@ export function WorkspaceSidebar() {
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const { theme, toggleTheme } = useThemeStore();
 
   useEffect(() => {
     hydrateTheme();
   }, []);
+
+  const handleExport = async () => {
+    if (!activeWorkspaceId) {
+      toast.error("No workspace selected");
+      return;
+    }
+    setExporting(true);
+    try {
+      await exportWorkspaceToJson(activeWorkspaceId);
+      toast.success("Workspace exported");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,8 +311,33 @@ export function WorkspaceSidebar() {
         </div>
       )}
 
-      {/* Theme toggle */}
+      {/* Settings */}
       <div className="mt-auto border-t border-border/50 px-3 py-3">
+        <h2 className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-muted">
+          Settings
+        </h2>
+        <button
+          onClick={handleExport}
+          disabled={exporting || !activeWorkspaceId}
+          className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+          title="Export workspace to JSON"
+        >
+          {exporting ? (
+            <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          ) : (
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+            </svg>
+          )}
+          <span>{exporting ? "Exporting…" : "Export Workspace"}</span>
+        </button>
+      </div>
+
+      {/* Theme toggle */}
+      <div className="border-t border-border/50 px-3 py-3">
         <button
           onClick={toggleTheme}
           className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground"
