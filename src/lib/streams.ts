@@ -34,6 +34,28 @@ export async function getStreamById(id: string) {
   return results[0] ?? null;
 }
 
+export async function getStreamByTitle(
+  title: string,
+  workspaceId?: string,
+) {
+  const whereClause = workspaceId
+    ? and(
+        eq(streams.title, title),
+        eq(streams.workspaceId, workspaceId),
+        eq(streams.status, "active"),
+      )
+    : and(eq(streams.title, title), eq(streams.status, "active"));
+
+  const results = await db
+    .select()
+    .from(streams)
+    .where(whereClause)
+    .orderBy(asc(streams.createdAt))
+    .limit(1);
+
+  return results[0] ?? null;
+}
+
 export async function getAllStreams(workspaceId: string) {
   return db
     .select()

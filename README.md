@@ -48,6 +48,47 @@ When `ACCESS_TOKEN` is set, each request must provide one of:
 If the token is missing or invalid, the app returns `401 Unauthorized`.
 If `ACCESS_TOKEN` is not set, auth checks are skipped (development mode).
 
+## MCP Server (for VS Code Agents)
+
+This repo includes a local MCP server that exposes Continuum operations over stdio.
+
+### Available tools
+
+- `get_workspace_by_name`: Resolve a workspace (including `id`) from its name.
+- `get_stream_by_title`: Resolve a stream (including `id`) from its title, optionally scoped by `workspaceId`.
+- `create_stream`: Create a stream (or substream) in a workspace.
+- `create_card`: Create a new card on a stream.
+- `set_latest_card_status`: Update the status of the latest editable card in a stream.
+
+### API resolve endpoints
+
+- `GET /api/workspaces/resolve?name=<workspaceName>`: resolve workspace by exact name.
+- `GET /api/streams/resolve?title=<streamTitle>&workspaceId=<optionalWorkspaceId>`: resolve stream by exact title.
+
+### Run locally
+
+```bash
+npm run mcp:server
+```
+
+### VS Code configuration
+
+An MCP config file is provided at `.vscode/mcp.json`:
+
+```json
+{
+	"servers": {
+		"continuum": {
+			"type": "stdio",
+			"command": "npm",
+			"args": ["run", "mcp:server"]
+		}
+	}
+}
+```
+
+If your VS Code setup does not auto-detect `.vscode/mcp.json`, copy the same block into your user/workspace MCP settings.
+
 ## Project Structure
 
 ```

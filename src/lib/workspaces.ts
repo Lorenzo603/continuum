@@ -15,6 +15,17 @@ export async function getWorkspaceById(id: string) {
   return results[0] ?? null;
 }
 
+export async function getWorkspaceByName(name: string) {
+  const results = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.name, name))
+    .orderBy(asc(workspaces.createdAt))
+    .limit(1);
+
+  return results[0] ?? null;
+}
+
 export async function createWorkspace(data: {
   name: string;
   description?: string | null;
