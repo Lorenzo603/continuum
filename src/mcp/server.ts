@@ -4,12 +4,98 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { createCard, getLatestCard, updateCard } from "@/lib/cards";
-import { createStream, getStreamByTitle } from "@/lib/streams";
-import { getWorkspaceByName } from "@/lib/workspaces";
 import { CARD_STATUSES, type CardStatus } from "@/types";
 
 const statusValues = CARD_STATUSES.map((status) => status.value) as [CardStatus, ...CardStatus[]];
+const apiBaseUrl = process.env.CONTINUUM_API_BASE_URL ?? "http://localhost:3000";
+const accessToken = process.env.ACCESS_TOKEN || "";
+
+type ApiRequestOptions = {
+  method?: "GET" | "POST" | "PATCH";
+  query?: Record<string, string | undefined>;
+  body?: unknown;
+};
+
+type ApiResponse<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; message: string; details?: unknown };
+
+type CardRecord = {
+  id: string;
+  content: string;
+  version: number;
+  isEditable: boolean;
+  metadata?: {
+    status?: CardStatus;
+    tags?: string[];
+    dueDate?: string;
+  } | null;
+};
+
+function buildApiUrl(pathname: string, query?: Record<string, string | undefined>) {
+  const url = new URL(pathname, apiBaseUrl);
+
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) {
+        url.searchParams.set(key, value);
+      }
+    }
+  }
+
+  return url;
+}
+
+function parseErrorPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return { message: "Request failed", details: null };
+  }
+
+  const message = "error" in payload && typeof payload.error === "string"
+    ? payload.error
+    : "Request failed";
+
+  const details = "details" in payload ? payload.details : null;
+
+  return { message, details };
+}
+
+async function apiRequest<T>(pathname: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(buildApiUrl(pathname, options.query), {
+      method: options.method ?? "GET",
+      headers: {
+        "X-Access-Token": accessToken,
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    const payload = (await response.json().catch(() => null)) as unknown;
+
+    if (!response.ok) {
+      const { message, details } = parseErrorPayload(payload);
+      return {
+        ok: false,
+        status: response.status,
+        message,
+        details,
+      };
+    }
+
+    return {
+      ok: true,
+      data: payload as T,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Request failed";
+    return {
+      ok: false,
+      status: 0,
+      message,
+    };
+  }
+}
 
 function asTextResult(payload: unknown) {
   return {
@@ -55,20 +141,22 @@ server.tool(
     name: z.string().min(1),
   },
   async ({ name }) => {
-    try {
-      const workspace = await getWorkspaceByName(name);
-      if (!workspace) {
-        return asErrorResult("Workspace not found", { name });
-      }
+    const response = await apiRequest<unknown>("/api/workspaces/resolve", {
+      query: { name },
+    });
 
-      return asTextResult({
-        ok: true,
-        workspace,
+    if (!response.ok) {
+      return asErrorResult(response.message, {
+        name,
+        status: response.status,
+        details: response.details ?? null,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to resolve workspace";
-      return asErrorResult(message);
     }
+
+    return asTextResult({
+      ok: true,
+      workspace: response.data,
+    });
   },
 );
 
@@ -80,20 +168,26 @@ server.tool(
     workspaceId: z.string().uuid().optional(),
   },
   async ({ title, workspaceId }) => {
-    try {
-      const stream = await getStreamByTitle(title, workspaceId);
-      if (!stream) {
-        return asErrorResult("Stream not found", { title, workspaceId: workspaceId ?? null });
-      }
+    const response = await apiRequest<unknown>("/api/streams/resolve", {
+      query: {
+        title,
+        workspaceId,
+      },
+    });
 
-      return asTextResult({
-        ok: true,
-        stream,
+    if (!response.ok) {
+      return asErrorResult(response.message, {
+        title,
+        workspaceId: workspaceId ?? null,
+        status: response.status,
+        details: response.details ?? null,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to resolve stream";
-      return asErrorResult(message);
     }
+
+    return asTextResult({
+      ok: true,
+      stream: response.data,
+    });
   },
 );
 
@@ -106,21 +200,29 @@ server.tool(
     parentStreamId: z.string().uuid().nullable().optional(),
   },
   async ({ title, workspaceId, parentStreamId }) => {
-    try {
-      const stream = await createStream({
+    const response = await apiRequest<unknown>("/api/streams", {
+      method: "POST",
+      body: {
         title,
         workspaceId,
         parentStreamId: parentStreamId ?? null,
-      });
+      },
+    });
 
-      return asTextResult({
-        ok: true,
-        stream,
+    if (!response.ok) {
+      return asErrorResult(response.message, {
+        title,
+        workspaceId,
+        parentStreamId: parentStreamId ?? null,
+        status: response.status,
+        details: response.details ?? null,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to create stream";
-      return asErrorResult(message);
     }
+
+    return asTextResult({
+      ok: true,
+      stream: response.data,
+    });
   },
 );
 
@@ -135,21 +237,27 @@ server.tool(
     dueDate: z.string().datetime().optional(),
   },
   async ({ streamId, content, status, tags, dueDate }) => {
-    try {
-      const card = await createCard({
+    const response = await apiRequest<unknown>("/api/cards", {
+      method: "POST",
+      body: {
         streamId,
         content,
         metadata: status || tags || dueDate ? { status, tags, dueDate } : null,
-      });
+      },
+    });
 
-      return asTextResult({
-        ok: true,
-        card,
+    if (!response.ok) {
+      return asErrorResult(response.message, {
+        streamId,
+        status: response.status,
+        details: response.details ?? null,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to create card";
-      return asErrorResult(message);
     }
+
+    return asTextResult({
+      ok: true,
+      card: response.data,
+    });
   },
 );
 
@@ -161,32 +269,53 @@ server.tool(
     status: z.enum(statusValues),
   },
   async ({ streamId, status }) => {
-    try {
-      const latestCard = await getLatestCard(streamId);
+    const cardsResponse = await apiRequest<CardRecord[]>(`/api/streams/${streamId}/cards`);
 
-      if (!latestCard) {
-        return asErrorResult("No card exists for the provided streamId");
-      }
+    if (!cardsResponse.ok) {
+      return asErrorResult(cardsResponse.message, {
+        streamId,
+        status: cardsResponse.status,
+        details: cardsResponse.details ?? null,
+      });
+    }
 
-      const updatedCard = await updateCard(latestCard.id, {
+    const latestCard = cardsResponse.data
+      .filter((card) => card.isEditable)
+      .sort((a, b) => b.version - a.version)[0];
+
+    if (!latestCard) {
+      return asErrorResult("No editable card exists for the provided streamId", {
+        streamId,
+      });
+    }
+
+    const updateResponse = await apiRequest<CardRecord>(`/api/cards/${latestCard.id}`, {
+      method: "PATCH",
+      body: {
         content: latestCard.content,
         metadata: {
           ...(latestCard.metadata ?? {}),
           status,
         },
-      });
+      },
+    });
 
-      return asTextResult({
-        ok: true,
+    if (!updateResponse.ok) {
+      return asErrorResult(updateResponse.message, {
         streamId,
-        previousStatus: latestCard.metadata?.status ?? null,
-        updatedStatus: updatedCard.metadata?.status ?? null,
-        card: updatedCard,
+        cardId: latestCard.id,
+        status: updateResponse.status,
+        details: updateResponse.details ?? null,
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to update latest card status";
-      return asErrorResult(message);
     }
+
+    return asTextResult({
+      ok: true,
+      streamId,
+      previousStatus: latestCard.metadata?.status ?? null,
+      updatedStatus: updateResponse.data.metadata?.status ?? null,
+      card: updateResponse.data,
+    });
   },
 );
 
