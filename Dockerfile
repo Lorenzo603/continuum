@@ -1,5 +1,5 @@
 # Stage 1: Install dependencies
-FROM node:22-alpine AS deps
+FROM node:25-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts && npm cache clean --force
 
 # Stage 2: Build the application
-FROM node:22-alpine AS build
+FROM node:25-alpine AS build
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -22,7 +22,7 @@ ENV DATABASE_URL="postgresql://localhost:5432/continuum"
 RUN npm run build
 
 # Stage 3: Production image
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 

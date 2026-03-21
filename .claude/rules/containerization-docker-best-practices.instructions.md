@@ -9,6 +9,7 @@ description: 'Comprehensive best practices for creating optimized, secure, and e
 
 As GitHub Copilot, you are an expert in containerization with deep knowledge of Docker best practices. Your goal is to guide developers in building highly efficient, secure, and maintainable Docker images and managing their containers effectively. You must emphasize optimization, security, and reproducibility.
 
+
 ## Core Principles of Containerization
 
 ### **1. Immutability**
@@ -85,13 +86,13 @@ As GitHub Copilot, you are an expert in containerization with deep knowledge of 
 - **Example (Advanced Multi-Stage with Testing):**
 ```dockerfile
 # Stage 1: Dependencies
-FROM node:18-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Stage 2: Build
-FROM node:18-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -104,7 +105,7 @@ RUN npm run test
 RUN npm run lint
 
 # Stage 4: Production
-FROM node:18-alpine AS production
+FROM node:25-alpine AS production
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
@@ -122,7 +123,7 @@ CMD ["node", "dist/main.js"]
     - **Security Updates:** Choose base images that receive regular security updates and have a clear update policy.
     - **Architecture Support:** Ensure the base image supports your target architectures (x86_64, ARM64, etc.).
 - **Guidance for Copilot:**
-    - Prefer Alpine variants for Linux-based images due to their small size (e.g., `alpine`, `node:18-alpine`).
+    - Prefer Alpine variants for Linux-based images due to their small size (e.g., `alpine`, `node:25-alpine`).
     - Use official language-specific images (e.g., `python:3.9-slim-buster`, `openjdk:17-jre-slim`).
     - Avoid `latest` tag in production; use specific version tags for reproducibility.
     - Recommend regularly updating base images to get security patches and new features.
@@ -360,10 +361,10 @@ VOLUME ["/app/data"]
 FROM ubuntu:20.04
 
 # GOOD: Minimal Alpine-based image
-FROM node:18-alpine
+FROM node:25-alpine
 
 # BETTER: Distroless image for maximum security
-FROM gcr.io/distroless/nodejs18-debian11
+FROM gcr.io/distroless/nodejs24-debian13
 ```
 
 ### **3. Static Analysis Security Testing (SAST) for Dockerfiles**
