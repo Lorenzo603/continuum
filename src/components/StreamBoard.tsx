@@ -19,10 +19,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis } from "./dndModifiers";
 import { useStreams } from "@/hooks/useStreams";
+import { useFilteredStreams } from "@/hooks/useFilteredStreams";
 import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { StreamRow } from "./StreamRow";
+import { StreamSearchBar } from "./StreamSearchBar";
 import { NewStreamForm } from "./NewStreamForm";
 import { EmptyState } from "./EmptyState";
 import { CardEditorModal } from "./CardEditorModal";
@@ -32,7 +34,9 @@ export function StreamBoard() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const { streams, loading, error } = useStreams(activeWorkspaceId);
   const { deleteStream, archiveStream, unarchiveStream, reorderStreams, archivedStreams } = useStreamStore();
-  const { isCreatingStream, setCreatingStream } = useUIStore();
+  const { isCreatingStream, setCreatingStream, searchQuery, showArchived } = useUIStore();
+  const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived);
+  const isFiltering = searchQuery.trim() !== '' || showArchived;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -82,16 +86,11 @@ export function StreamBoard() {
     );
   }
 
-  if (streams.length === 0 && !isCreatingStream) {
+  if (streams.length === 0 && archivedStreams.length === 0 && !isCreatingStream) {
     return (
       <>
+        <StreamSearchBar />
         <EmptyState onCreateStream={() => setCreatingStream(true)} />
-        {archivedStreams.length > 0 && (
-          <ArchivedStreamsSection
-            streams={archivedStreams}
-            onUnarchive={unarchiveStream}
-          />
-        )}
       </>
     );
   }
@@ -99,8 +98,14 @@ export function StreamBoard() {
   return (
     <div className="flex flex-col divide-y divide-border/30">
       <div className="pb-4">
-        <span className="text-xs text-muted font-medium">{streams.length} {streams.length === 1 ? 'stream' : 'streams'}</span>
+        <StreamSearchBar />
+        <span className="text-xs text-muted font-medium">{filteredStreams.length} {filteredStreams.length === 1 ? 'stream' : 'streams'}{isFiltering ? ' found' : ''}</span>
       </div>
+      {filteredStreams.length === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <p className="text-muted text-sm">No streams match your search.</p>
+        </div>
+      ) : (
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -108,10 +113,10 @@ export function StreamBoard() {
         modifiers={[restrictToVerticalAxis]}
       >
         <SortableContext
-          items={streams.map((s) => s.id)}
+          items={filteredStreams.map((s) => s.id)}
           strategy={verticalListSortingStrategy}
         >
-          {streams.map((stream) => (
+          {filteredStreams.map((stream) => (
             <SortableStreamTree
               key={stream.id}
               node={stream}
@@ -122,6 +127,7 @@ export function StreamBoard() {
           ))}
         </SortableContext>
       </DndContext>
+      )}
 
       {isCreatingStream ? (
         <NewStreamForm
@@ -153,7 +159,7 @@ export function StreamBoard() {
 
       <CardEditorModal />
 
-      {archivedStreams.length > 0 && (
+      {!showArchived && archivedStreams.length > 0 && (
         <ArchivedStreamsSection
           streams={archivedStreams}
           onUnarchive={unarchiveStream}

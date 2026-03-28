@@ -14,6 +14,8 @@ interface UIState {
   selectedStreamId: string | null;
   isCreatingStream: boolean;
   cardEditorModal: CardEditorModalState | null;
+  searchQuery: string;
+  showArchived: boolean;
 
   toggleStreamExpand: (streamId: string) => void;
   setEditingCard: (cardId: string | null) => void;
@@ -21,6 +23,8 @@ interface UIState {
   setCreatingStream: (value: boolean) => void;
   openCardEditor: (modal: CardEditorModalState) => void;
   closeCardEditor: () => void;
+  setSearchQuery: (query: string) => void;
+  setShowArchived: (show: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -29,6 +33,8 @@ export const useUIStore = create<UIState>((set) => ({
   selectedStreamId: null,
   isCreatingStream: false,
   cardEditorModal: null,
+  searchQuery: "",
+  showArchived: false,
 
   toggleStreamExpand: (streamId) =>
     set((state) => {
@@ -46,4 +52,6 @@ export const useUIStore = create<UIState>((set) => ({
   setCreatingStream: (value) => set({ isCreatingStream: value }),
   openCardEditor: (modal) => set({ cardEditorModal: modal }),
   closeCardEditor: () => set({ cardEditorModal: null }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setShowArchived: (show) => set({ showArchived: show }),
 }));
