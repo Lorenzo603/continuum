@@ -1,9 +1,37 @@
 {
-  "servers": {
-    "continuum": {
-      "type": "stdio",
-      "command": "npm",
-      "args": ["run", "mcp:server"]
-    }
-  }
+	"servers": {
+		"continuum": {
+			"type": "stdio",
+			"command": "npm",
+			"args": [
+				"run",
+				"mcp:server"
+			]
+		},
+		"drawio": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"drawio-mcp-server",
+				"--editor"
+			],
+			"cwd": "${input:cwd}",
+			"sandboxEnabled": false,
+			"envFile": "${input:envFile}",
+			"dev": {},
+			"type": "stdio"
+		}
+	},
+	"inputs": [
+		{
+			"id": "cwd",
+			"type": "promptString",
+			"description": "Enter the working directory for the server command"
+		},
+		{
+			"id": "envFile",
+			"type": "promptString",
+			"description": "Path to a file containing environment variables for the server"
+		}
+	]
 }
