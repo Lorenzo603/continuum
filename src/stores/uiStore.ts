@@ -1,11 +1,14 @@
 import { create } from "zustand";
 import type { CardMetadata } from "@/types";
 
+export type CardEditorMode = "view" | "edit";
+
 export interface CardEditorModalState {
   streamId: string;
   cardId?: string;
   initialContent?: string;
   initialMetadata?: CardMetadata | null;
+  initialMode?: CardEditorMode;
 }
 
 interface UIState {

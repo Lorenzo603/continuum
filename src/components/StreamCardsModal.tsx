@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { Card } from "@/types";
 import { CARD_STATUSES } from "@/types";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
 const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
   "in-progress": { dot: "bg-success", bg: "bg-success/10", text: "text-success" },
@@ -293,7 +294,7 @@ function CardDetail({ card, formatDate }: { card: Card; formatDate: (iso: string
 
       {/* Content */}
       <div className="rounded-xl border border-border/40 bg-surface/30 px-5 py-4">
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{card.content}</p>
+        <MarkdownRenderer content={card.content} />
       </div>
 
       {/* Tags */}

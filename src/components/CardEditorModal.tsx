@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
+import type { CardEditorMode } from "@/stores/uiStore";
 import { useCardUpdate } from "@/hooks/useCardUpdate";
 import { useStreamStore } from "@/stores/streamStore";
 import { TagEditor } from "@/components/TagEditor";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { toast } from "sonner";
 
 export function CardEditorModal() {
@@ -25,6 +27,7 @@ function CardEditorModalInner() {
   const [content, setContent] = useState(modal.initialContent ?? "");
   const [tags, setTags] = useState<string[]>(modal.initialMetadata?.tags ?? []);
   const [saving, setSaving] = useState(false);
+  const [mode, setMode] = useState<CardEditorMode>(modal.initialMode ?? "edit");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -32,8 +35,9 @@ function CardEditorModalInner() {
   const streamTitle =
     streams.find((s) => s.id === modal.streamId)?.title ?? "Stream";
 
-  // Focus textarea on mount with cursor at end
+  // Focus textarea on mount when in edit mode, or when switching to edit
   useEffect(() => {
+    if (mode !== "edit") return;
     const t = setTimeout(() => {
       const el = textareaRef.current;
       if (!el) return;
@@ -41,7 +45,7 @@ function CardEditorModalInner() {
       el.selectionStart = el.selectionEnd = el.value.length;
     }, 50);
     return () => clearTimeout(t);
-  }, []);
+  }, [mode]);
 
   // Lock body scroll
   useEffect(() => {
@@ -107,9 +111,9 @@ function CardEditorModalInner() {
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-in fade-in duration-150"
       onClick={(e) => { if (e.target === backdropRef.current && !saving) closeCardEditor(); }}
     >
-      <div className="relative w-full max-w-2xl mx-4 rounded-xl border border-border/50 bg-card shadow-xl animate-in zoom-in-95 duration-200">
+      <div className="relative flex flex-col w-full max-w-3xl max-h-[90vh] mx-4 rounded-xl border border-border/50 bg-card shadow-xl animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border/40 px-6 py-4 flex-shrink-0">
           <div className="min-w-0">
             <h2 className="text-base font-semibold">
               {isEditing ? "Edit Card" : "New Card"}
@@ -119,46 +123,62 @@ function CardEditorModalInner() {
               {isEditing && " · Saving creates a new version"}
             </p>
           </div>
-          <button
-            onClick={closeCardEditor}
-            className="cursor-pointer flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-foreground hover:bg-surface"
-            aria-label="Close"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+          <div className="flex items-center gap-3">
+            {/* Mode toggle — only show for existing cards */}
+            {isEditing && (
+              <ModeToggle mode={mode} onChange={setMode} />
+            )}
+            <button
+              onClick={closeCardEditor}
+              className="cursor-pointer flex-shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:text-foreground hover:bg-surface"
+              aria-label="Close"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4">
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="What's the update?"
-            rows={8}
-            className="w-full resize-none rounded-xl border border-border/40 bg-surface/50 px-4 py-3 text-sm leading-relaxed placeholder:text-muted focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
-            disabled={saving}
-          />
-          <TagEditor tags={tags} onChange={setTags} disabled={saving} />
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 min-h-0">
+          {mode === "edit" ? (
+            <>
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="What's the update? (Markdown supported)"
+                rows={14}
+                className="w-full min-h-[200px] resize-y rounded-xl border border-border/40 bg-surface/50 px-4 py-3 text-sm leading-relaxed font-mono placeholder:text-muted focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+                disabled={saving}
+              />
+              <TagEditor tags={tags} onChange={setTags} disabled={saving} />
+            </>
+          ) : (
+            <div className="rounded-xl border border-border/40 bg-surface/30 px-5 py-4">
+              <MarkdownRenderer content={content} />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border/40 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-border/40 px-6 py-4 flex-shrink-0">
           <span className="text-[11px] text-muted">
-            Ctrl+Enter to save · Escape to cancel
+            {mode === "edit"
+              ? "Ctrl+Enter to save · Escape to cancel"
+              : "Escape to close"}
           </span>
           <div className="flex gap-3">
             <button
@@ -166,18 +186,62 @@ function CardEditorModalInner() {
               disabled={saving}
               className="cursor-pointer rounded-lg px-4 py-2 text-sm text-muted transition-colors hover:text-foreground hover:bg-surface"
             >
-              Cancel
+              {mode === "view" ? "Close" : "Cancel"}
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || !content.trim()}
-              className="cursor-pointer rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-            >
-              {saving ? "Saving…" : isEditing ? "Save New Version" : "Create Card"}
-            </button>
+            {mode === "edit" && (
+              <button
+                onClick={handleSave}
+                disabled={saving || !content.trim()}
+                className="cursor-pointer rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
+              >
+                {saving ? "Saving…" : isEditing ? "Save New Version" : "Create Card"}
+              </button>
+            )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** View / Edit mode toggle. */
+function ModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: CardEditorMode;
+  onChange: (mode: CardEditorMode) => void;
+}) {
+  return (
+    <div
+      className="flex rounded-lg border border-border/40 bg-surface/50 p-0.5"
+      role="tablist"
+      aria-label="Card mode"
+    >
+      <button
+        role="tab"
+        aria-selected={mode === "view"}
+        onClick={() => onChange("view")}
+        className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          mode === "view"
+            ? "bg-card text-foreground shadow-sm"
+            : "text-muted hover:text-foreground"
+        }`}
+      >
+        View
+      </button>
+      <button
+        role="tab"
+        aria-selected={mode === "edit"}
+        onClick={() => onChange("edit")}
+        className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+          mode === "edit"
+            ? "bg-card text-foreground shadow-sm"
+            : "text-muted hover:text-foreground"
+        }`}
+      >
+        Markdown Edit
+      </button>
     </div>
   );
 }
