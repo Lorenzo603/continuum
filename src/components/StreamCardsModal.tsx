@@ -115,16 +115,18 @@ function StripScrollbar({ stripRef }: { stripRef: React.RefObject<HTMLDivElement
 interface StreamCardsModalProps {
   streamTitle: string;
   cards: Card[];
+  initialCardId?: string | null;
   onClose: () => void;
 }
 
-export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsModalProps) {
+export function StreamCardsModal({ streamTitle, cards, initialCardId, onClose }: StreamCardsModalProps) {
   // Cards displayed with latest first (rightmost in the strip = most recent)
   // We reverse so the strip shows oldest→newest left→right, and auto-scroll to the right
   const displayCards = cards; // already ordered oldest→newest from the store
-  const [selectedId, setSelectedId] = useState<string | null>(
-    displayCards.length > 0 ? displayCards[displayCards.length - 1].id : null,
-  );
+  const resolvedInitialId = initialCardId && displayCards.some((c) => c.id === initialCardId)
+    ? initialCardId
+    : displayCards.length > 0 ? displayCards[displayCards.length - 1].id : null;
+  const [selectedId, setSelectedId] = useState<string | null>(resolvedInitialId);
   const stripRef = useRef<HTMLDivElement>(null);
 
   const selectedCard = displayCards.find((c) => c.id === selectedId) ?? null;
@@ -137,14 +139,22 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
     };
   }, []);
 
-  // Auto-scroll strip to the right (latest cards) on mount
+  // Auto-scroll strip to show the initially selected card on mount
   useEffect(() => {
     const el = stripRef.current;
-    if (el) {
-      requestAnimationFrame(() => {
-        el.scrollLeft = el.scrollWidth;
-      });
-    }
+    if (!el) return;
+    requestAnimationFrame(() => {
+      if (resolvedInitialId) {
+        const cardEl = el.querySelector(`[data-card-id="${resolvedInitialId}"]`);
+        if (cardEl) {
+          cardEl.scrollIntoView({ block: "nearest", inline: "center" });
+          return;
+        }
+      }
+      // Fallback: scroll to the right (latest cards)
+      el.scrollLeft = el.scrollWidth;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Close on Escape key
@@ -211,6 +221,7 @@ export function StreamCardsModal({ streamTitle, cards, onClose }: StreamCardsMod
               return (
                 <button
                   key={card.id}
+                  data-card-id={card.id}
                   onClick={() => setSelectedId(card.id)}
                   className={`cursor-pointer flex-shrink-0 w-[200px] rounded-xl border p-3 text-left transition-all duration-150 ${
                     isSelected
