@@ -97,6 +97,14 @@ export function StreamBoard() {
 
   return (
     <div className="flex flex-col divide-y divide-border/30">
+      <div id="stream-board-top" className="flex justify-end pb-2">
+        <a
+          href="#stream-board-bottom"
+          className="text-xs text-muted hover:text-primary transition-colors"
+        >
+          Jump to bottom ↓
+        </a>
+      </div>
       <div className="pb-4">
         <StreamSearchBar />
         <span className="text-xs text-muted font-medium">{filteredStreams.length} {filteredStreams.length === 1 ? 'stream' : 'streams'}{isFiltering ? ' found' : ''}</span>
@@ -165,6 +173,15 @@ export function StreamBoard() {
           onUnarchive={unarchiveStream}
         />
       )}
+
+      <div id="stream-board-bottom" className="flex justify-end pt-4">
+        <a
+          href="#stream-board-top"
+          className="text-xs text-muted hover:text-primary transition-colors"
+        >
+          Back to top ↑
+        </a>
+      </div>
     </div>
   );
 }

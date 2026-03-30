@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* ── Light mode (default) ── */
 /* Warm Precision: stone-tinted neutrals + deep indigo accent */
 :root {
