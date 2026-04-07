@@ -1,10 +1,50 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
-import { getAllWorkspaces } from "@/lib/workspaces";
 import type { Workspace } from "@/types";
 
-export default async function Home() {
-  const workspaces: Workspace[] = await getAllWorkspaces();
+export default function Home() {
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadWorkspaces = async () => {
+      try {
+        setLoadError(null);
+        const response = await fetch("/api/workspaces", {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load workspaces");
+        }
+
+        const data: Workspace[] = await response.json();
+        setWorkspaces(data);
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        setLoadError(error instanceof Error ? error.message : "Failed to load workspaces");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadWorkspaces();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   return (
     <main className="flex min-h-screen bg-background">
@@ -32,7 +72,11 @@ export default async function Home() {
               Select a workspace to open its board. Workspace boards are available at the URL pattern /workspace/&lt;id&gt;.
             </p>
 
-            {workspaces.length === 0 ? (
+            {loading ? (
+              <p className="mt-6 text-sm text-muted">Loading workspaces...</p>
+            ) : loadError ? (
+              <p className="mt-6 text-sm text-danger">{loadError}</p>
+            ) : workspaces.length === 0 ? (
               <p className="mt-6 text-sm text-muted">
                 No workspaces yet. Create one from the sidebar to get started.
               </p>
