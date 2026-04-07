@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const workspaceIdParamSchema = z.string().uuid();
+
 export const cardMetadataSchema = z
   .object({
     tags: z.array(z.string()).optional(),

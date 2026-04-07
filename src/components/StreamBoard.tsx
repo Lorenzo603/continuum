@@ -22,7 +22,6 @@ import { useStreams } from "@/hooks/useStreams";
 import { useFilteredStreams } from "@/hooks/useFilteredStreams";
 import { useStreamStore } from "@/stores/streamStore";
 import { useUIStore } from "@/stores/uiStore";
-import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { StreamRow } from "./StreamRow";
 import { StreamSearchBar } from "./StreamSearchBar";
 import { NewStreamForm } from "./NewStreamForm";
@@ -30,9 +29,12 @@ import { EmptyState } from "./EmptyState";
 import { CardEditorModal } from "./CardEditorModal";
 import type { Stream, StreamNode } from "@/types";
 
-export function StreamBoard() {
-  const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
-  const { streams, loading, error } = useStreams(activeWorkspaceId);
+interface StreamBoardProps {
+  workspaceId: string;
+}
+
+export function StreamBoard({ workspaceId }: StreamBoardProps) {
+  const { streams, loading, error } = useStreams(workspaceId);
   const { deleteStream, archiveStream, unarchiveStream, reorderStreams, archivedStreams } = useStreamStore();
   const { isCreatingStream, setCreatingStream, searchQuery, showArchived } = useUIStore();
   const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived);
@@ -64,14 +66,6 @@ export function StreamBoard() {
     },
     [streams, reorderStreams]
   );
-
-  if (!activeWorkspaceId) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted text-sm">Select or create a workspace to get started.</p>
-      </div>
-    );
-  }
 
   if (loading && streams.length === 0) {
     return <StreamBoardLoadingState />;
@@ -141,7 +135,7 @@ export function StreamBoard() {
         <NewStreamForm
           onCancel={() => setCreatingStream(false)}
           parentStreamId={null}
-          workspaceId={activeWorkspaceId}
+          workspaceId={workspaceId}
         />
       ) : (
         <button

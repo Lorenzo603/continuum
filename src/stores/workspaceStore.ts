@@ -10,7 +10,7 @@ interface WorkspaceState {
   error: string | null;
 
   fetchWorkspaces: () => Promise<void>;
-  setActiveWorkspace: (id: string) => void;
+  setActiveWorkspace: (id: string | null) => void;
   addWorkspace: (name: string, description?: string | null) => Promise<Workspace | null>;
   updateWorkspace: (
     id: string,
@@ -33,16 +33,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const data: Workspace[] = await res.json();
       set({ workspaces: data, loading: false });
 
-      // Restore last selected workspace from localStorage, or auto-select first
       const current = get().activeWorkspaceId;
       const saved = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_WORKSPACE_KEY) : null;
-      const preferred = saved ?? current;
+      const preferred = current ?? saved;
+
       if (preferred && data.find((w) => w.id === preferred)) {
         set({ activeWorkspaceId: preferred });
-      } else if (data.length > 0) {
-        const newId = data[0].id;
-        set({ activeWorkspaceId: newId });
-        if (typeof window !== "undefined") localStorage.setItem(ACTIVE_WORKSPACE_KEY, newId);
+      } else {
+        set({ activeWorkspaceId: null });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+        }
       }
     } catch (error) {
       set({
@@ -54,7 +55,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   setActiveWorkspace: (id) => {
     set({ activeWorkspaceId: id });
-    if (typeof window !== "undefined") localStorage.setItem(ACTIVE_WORKSPACE_KEY, id);
+    if (typeof window !== "undefined") {
+      if (id) {
+        localStorage.setItem(ACTIVE_WORKSPACE_KEY, id);
+      } else {
+        localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+      }
+    }
   },
 
   addWorkspace: async (name, description = null) => {

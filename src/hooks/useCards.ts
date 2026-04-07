@@ -3,7 +3,7 @@ import { useCardStore } from "@/stores/cardStore";
 
 const EMPTY_CARDS: never[] = [];
 
-export function useCards(streamId: string) {
+export function useCards(streamId: string, workspaceId: string) {
   const cards = useCardStore(
     (state) => state.cardsByStream[streamId] ?? EMPTY_CARDS
   );
@@ -12,8 +12,8 @@ export function useCards(streamId: string) {
   const fetchCards = useCardStore((state) => state.fetchCards);
 
   useEffect(() => {
-    fetchCards(streamId);
-  }, [streamId, fetchCards]);
+    fetchCards(streamId, workspaceId);
+  }, [streamId, workspaceId, fetchCards]);
 
   return { cards, loading, error };
 }

@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { useThemeStore, hydrateTheme } from "@/stores/themeStore";
 import { exportWorkspaceToJson } from "@/lib/exportWorkspace";
 import { toast } from "sonner";
 
-export function WorkspaceSidebar() {
+interface WorkspaceSidebarProps {
+  currentWorkspaceId?: string | null;
+}
+
+export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const {
     workspaces,
     activeWorkspaceId,
@@ -25,19 +33,35 @@ export function WorkspaceSidebar() {
   const [renaming, setRenaming] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { theme, toggleTheme } = useThemeStore();
+  const selectedWorkspaceId = currentWorkspaceId ?? activeWorkspaceId;
+  const exportWorkspaceId = currentWorkspaceId;
 
   useEffect(() => {
     hydrateTheme();
   }, []);
 
+  useEffect(() => {
+    if (currentWorkspaceId && currentWorkspaceId !== activeWorkspaceId) {
+      setActiveWorkspace(currentWorkspaceId);
+    }
+  }, [activeWorkspaceId, currentWorkspaceId, setActiveWorkspace]);
+
+  const navigateToWorkspace = (workspaceId: string) => {
+    setActiveWorkspace(workspaceId);
+    const targetPath = `/workspace/${workspaceId}`;
+    if (pathname !== targetPath) {
+      router.push(targetPath);
+    }
+  };
+
   const handleExport = async () => {
-    if (!activeWorkspaceId) {
-      toast.error("No workspace selected");
+    if (!exportWorkspaceId) {
+      toast.error("Open a workspace to export it");
       return;
     }
     setExporting(true);
     try {
-      await exportWorkspaceToJson(activeWorkspaceId);
+      await exportWorkspaceToJson(exportWorkspaceId);
       toast.success("Workspace exported");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
@@ -55,6 +79,7 @@ export function WorkspaceSidebar() {
       const ws = await addWorkspace(newName.trim());
       if (ws) {
         toast.success("Workspace created");
+        navigateToWorkspace(ws.id);
         setNewName("");
         setIsCreating(false);
       }
@@ -69,8 +94,19 @@ export function WorkspaceSidebar() {
     if (!confirm(`Delete workspace "${name}"? All streams and cards in it will be permanently deleted.`)) {
       return;
     }
+
+    const remainingWorkspaceId = workspaces.find((ws) => ws.id !== id)?.id ?? null;
     await deleteWorkspace(id);
     toast.success("Workspace deleted");
+
+    if (currentWorkspaceId === id) {
+      if (remainingWorkspaceId) {
+        navigateToWorkspace(remainingWorkspaceId);
+      } else {
+        setActiveWorkspace(null);
+        router.push("/");
+      }
+    }
   };
 
   const startRename = (id: string, name: string) => {
@@ -151,22 +187,23 @@ export function WorkspaceSidebar() {
               role="button"
               tabIndex={isEditing ? -1 : 0}
               onClick={() => {
-                if (!isEditing) setActiveWorkspace(ws.id);
+                if (!isEditing) navigateToWorkspace(ws.id);
               }}
               onKeyDown={(e) => {
                 if (!isEditing && (e.key === "Enter" || e.key === " ")) {
-                  setActiveWorkspace(ws.id);
+                  e.preventDefault();
+                  navigateToWorkspace(ws.id);
                 }
               }}
               className={`group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mb-0.5 ${
-                ws.id === activeWorkspaceId
+                ws.id === selectedWorkspaceId
                   ? "bg-card text-foreground font-medium"
                   : "text-foreground/70 hover:bg-card-hover hover:text-foreground"
               } ${isEditing ? "cursor-default" : "cursor-pointer"}`}
             >
               <div
                 className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${
-                  ws.id === activeWorkspaceId
+                  ws.id === selectedWorkspaceId
                     ? "bg-primary/15 text-primary"
                     : "bg-surface text-muted"
                 }`}
@@ -318,7 +355,7 @@ export function WorkspaceSidebar() {
         </h2>
         <button
           onClick={handleExport}
-          disabled={exporting || !activeWorkspaceId}
+          disabled={exporting || !exportWorkspaceId}
           className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
           title="Export workspace to JSON"
         >

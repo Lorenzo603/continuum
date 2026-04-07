@@ -32,7 +32,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   error: null,
 
   fetchStreams: async (workspaceId: string) => {
-    set({ loading: true, error: null, currentWorkspaceId: workspaceId });
+    const previousWorkspaceId = get().currentWorkspaceId;
+    const isWorkspaceChange = previousWorkspaceId !== workspaceId;
+    set({
+      loading: true,
+      error: null,
+      currentWorkspaceId: workspaceId,
+      ...(isWorkspaceChange ? { streams: [], archivedStreams: [] } : {}),
+    });
     try {
       const res = await fetch(`/api/streams?workspaceId=${encodeURIComponent(workspaceId)}`);
       if (!res.ok) throw new Error("Failed to fetch streams");

@@ -64,7 +64,7 @@ export const StreamRow = memo(function StreamRow({
   onArchive,
   dragHandleProps,
 }: StreamRowProps) {
-  const { cards, loading } = useCards(stream.id);
+  const { cards, loading } = useCards(stream.id, stream.workspaceId);
   const { updateStream } = useStreamStore();
   const openCardEditor = useUIStore((s) => s.openCardEditor);
   const [isEditingTitle, setIsEditingTitle] = useState(false);

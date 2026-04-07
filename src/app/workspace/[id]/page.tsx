@@ -1,0 +1,55 @@
+import { notFound } from "next/navigation";
+import { StreamBoard } from "@/components/StreamBoard";
+import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
+import { getWorkspaceById } from "@/lib/workspaces";
+import { workspaceIdParamSchema } from "@/lib/validations";
+
+interface WorkspacePageProps {
+  params: Promise<{ id?: string }>;
+}
+
+export default async function WorkspacePage({ params }: WorkspacePageProps) {
+  const { id } = await params;
+  const parsedId = workspaceIdParamSchema.safeParse(id);
+
+  if (!parsedId.success) {
+    notFound();
+  }
+
+  const workspace = await getWorkspaceById(parsedId.data);
+  if (!workspace) {
+    notFound();
+  }
+
+  return (
+    <main className="flex min-h-screen bg-background">
+      <WorkspaceSidebar currentWorkspaceId={workspace.id} />
+
+      <div className="flex flex-1 flex-col min-w-0">
+        <header className="sticky top-0 z-40 border-b border-border/40 bg-background">
+          <div className="mx-auto max-w-screen-2xl flex items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+            <div className="flex items-center gap-3">
+              <img
+                src="/img/logo/continuum-logo-light.svg"
+                alt="Continuum"
+                className="h-7 w-auto block dark:hidden"
+              />
+              <img
+                src="/img/logo/continuum-logo-dark.svg"
+                alt="Continuum"
+                className="h-7 w-auto hidden dark:block"
+              />
+            </div>
+            <p className="truncate text-sm text-muted" title={workspace.name}>
+              {workspace.name}
+            </p>
+          </div>
+        </header>
+
+        <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6">
+          <StreamBoard workspaceId={workspace.id} />
+        </div>
+      </div>
+    </main>
+  );
+}

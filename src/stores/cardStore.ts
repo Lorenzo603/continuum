@@ -8,7 +8,7 @@ interface CardState {
   /** Internal mutation counter per stream — prevents stale fetches from overwriting mutation results */
   _mutationVersion: Record<string, number>;
 
-  fetchCards: (streamId: string) => Promise<void>;
+  fetchCards: (streamId: string, workspaceId?: string) => Promise<void>;
   createCard: (
     streamId: string,
     content: string,
@@ -29,7 +29,7 @@ export const useCardStore = create<CardState>((set, get) => ({
   error: null,
   _mutationVersion: {},
 
-  fetchCards: async (streamId) => {
+  fetchCards: async (streamId, workspaceId) => {
     // Skip if we already have data for this stream (prevents StrictMode double-fetch race)
     if (get().cardsByStream[streamId] !== undefined) return;
 
@@ -39,7 +39,10 @@ export const useCardStore = create<CardState>((set, get) => ({
       error: null,
     }));
     try {
-      const res = await fetch(`/api/streams/${streamId}/cards`, {
+      const workspaceQuery = workspaceId
+        ? `?workspaceId=${encodeURIComponent(workspaceId)}`
+        : "";
+      const res = await fetch(`/api/streams/${streamId}/cards${workspaceQuery}`, {
         cache: "no-store",
       });
       if (!res.ok) throw new Error("Failed to fetch cards");
