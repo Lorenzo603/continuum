@@ -27,6 +27,7 @@ import { StreamSearchBar } from "./StreamSearchBar";
 import { NewStreamForm } from "./NewStreamForm";
 import { EmptyState } from "./EmptyState";
 import { CardEditorModal } from "./CardEditorModal";
+import { WorkspaceViewNav } from "./WorkspaceViewNav";
 import type { Stream, StreamNode } from "@/types";
 
 interface StreamBoardProps {
@@ -83,6 +84,7 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
   if (streams.length === 0 && archivedStreams.length === 0 && !isCreatingStream) {
     return (
       <>
+        <WorkspaceViewNav workspaceId={workspaceId} />
         <StreamSearchBar />
         <EmptyState onCreateStream={() => setCreatingStream(true)} />
       </>
@@ -100,6 +102,7 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
         </a>
       </div>
       <div className="pb-4">
+        <WorkspaceViewNav workspaceId={workspaceId} />
         <StreamSearchBar />
         <span className="text-xs text-muted font-medium">{filteredStreams.length} {filteredStreams.length === 1 ? 'stream' : 'streams'}{isFiltering ? ' found' : ''}</span>
       </div>
