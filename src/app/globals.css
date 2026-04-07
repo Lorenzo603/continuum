@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Make Tailwind's dark: utilities follow the html.dark class (theme toggle source of truth). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html {
   scroll-behavior: smooth;
 }
