@@ -47,3 +47,7 @@ export const updateCardSchema = z.object({
   content: z.string().min(1, "Content is required"),
   metadata: cardMetadataSchema,
 });
+
+export const updateSettingsSchema = z.object({
+  prepopulateCardContent: z.boolean(),
+});

@@ -1,4 +1,5 @@
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
+import { SettingsContent } from "@/components/SettingsContent";
 
 export const metadata = {
   title: "Settings — Continuum",
@@ -29,9 +30,9 @@ export default function SettingsPage() {
 
         <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6">
           <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-          <p className="mt-2 text-sm text-muted">
-            No settings available yet.
-          </p>
+          <div className="mt-6">
+            <SettingsContent />
+          </div>
         </div>
       </div>
     </main>

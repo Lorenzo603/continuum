@@ -49,3 +49,14 @@ export const cards = sqliteTable(
     uniqueIndex("stream_version_idx").on(table.streamId, table.version),
   ]
 );
+
+export const settings = sqliteTable("settings", {
+  id: text("id").primaryKey(),
+  prepopulateCardContent: integer("prepopulate_card_content", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});

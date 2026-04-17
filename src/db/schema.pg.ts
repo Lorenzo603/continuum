@@ -65,3 +65,14 @@ export const cards = pgTable(
     uniqueIndex("stream_version_idx").on(table.streamId, table.version),
   ],
 );
+
+export const settings = pgTable("settings", {
+  id: text("id").primaryKey(),
+  prepopulateCardContent: boolean("prepopulate_card_content").notNull().default(true),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});

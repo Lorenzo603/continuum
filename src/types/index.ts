@@ -87,3 +87,10 @@ export interface UpdateCardInput {
   content: string;
   metadata?: CardMetadata | null;
 }
+
+export interface Settings {
+  id: string;
+  prepopulateCardContent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

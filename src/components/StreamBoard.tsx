@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -23,6 +23,7 @@ import { useFilteredStreams } from "@/hooks/useFilteredStreams";
 import { useStreamStore } from "@/stores/streamStore";
 import { useCardStore } from "@/stores/cardStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { StreamRow } from "./StreamRow";
 import { StreamSearchBar } from "./StreamSearchBar";
 import { NewStreamForm } from "./NewStreamForm";
@@ -40,7 +41,12 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
   const { deleteStream, archiveStream, unarchiveStream, reorderStreams, archivedStreams } = useStreamStore();
   const { isCreatingStream, setCreatingStream, searchQuery, showArchived, statusFilters } = useUIStore();
   const cardsByStream = useCardStore((s) => s.cardsByStream);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
+  const settingsLoaded = useSettingsStore((s) => s.loaded);
   const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived, statusFilters, cardsByStream);
+
+  // Fetch settings once on mount
+  useEffect(() => { if (!settingsLoaded) fetchSettings(); }, [settingsLoaded, fetchSettings]);
   const isFiltering = searchQuery.trim() !== '' || showArchived || statusFilters.size > 0;
 
   const sensors = useSensors(

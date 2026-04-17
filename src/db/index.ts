@@ -22,6 +22,7 @@ function initSqlite() {
     workspaces: sqliteSchema.workspaces,
     streams: sqliteSchema.streams,
     cards: sqliteSchema.cards,
+    settings: sqliteSchema.settings,
   };
 }
 
@@ -39,6 +40,7 @@ function initPostgres() {
     workspaces: pgSchema.workspaces,
     streams: pgSchema.streams,
     cards: pgSchema.cards,
+    settings: pgSchema.settings,
   };
 }
 
@@ -62,5 +64,9 @@ export const streams: any = instance.streams;
 /** The `cards` table for the active dialect. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const cards: any = instance.cards;
+
+/** The `settings` table for the active dialect. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const settings: any = instance.settings;
 
 export { DB_TYPE };

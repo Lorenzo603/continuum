@@ -5,6 +5,8 @@ import { useUIStore } from "@/stores/uiStore";
 import type { CardEditorMode } from "@/stores/uiStore";
 import { useCardUpdate } from "@/hooks/useCardUpdate";
 import { useStreamStore } from "@/stores/streamStore";
+import { useCardStore } from "@/stores/cardStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { TagEditor } from "@/components/TagEditor";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { toast } from "sonner";
@@ -22,10 +24,27 @@ function CardEditorModalInner() {
   const modal = useUIStore((s) => s.cardEditorModal)!;
   const closeCardEditor = useUIStore((s) => s.closeCardEditor);
   const streams = useStreamStore((s) => s.streams);
+  const cardsByStream = useCardStore((s) => s.cardsByStream);
+  const prepopulateCardContent = useSettingsStore((s) => s.prepopulateCardContent);
   const { handleUpdate, handleCreate } = useCardUpdate();
 
-  const [content, setContent] = useState(modal.initialContent ?? "");
-  const [tags, setTags] = useState<string[]>(modal.initialMetadata?.tags ?? []);
+  // Derive prepopulated values for new cards
+  const isNewCard = !modal.cardId;
+  const latestCard = (() => {
+    if (!isNewCard || !prepopulateCardContent) return null;
+    const cards = cardsByStream[modal.streamId];
+    if (!cards || cards.length === 0) return null;
+    return [...cards].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )[0];
+  })();
+
+  const [content, setContent] = useState(
+    modal.initialContent ?? (isNewCard && latestCard ? latestCard.content : ""),
+  );
+  const [tags, setTags] = useState<string[]>(
+    modal.initialMetadata?.tags ?? (isNewCard && latestCard?.metadata?.tags ? latestCard.metadata.tags : []),
+  );
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<CardEditorMode>(modal.initialMode ?? "edit");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -70,8 +89,9 @@ function CardEditorModalInner() {
       return;
     }
     setSaving(true);
+    const baseMetadata = modal.initialMetadata ?? (isNewCard && latestCard?.metadata ? latestCard.metadata : undefined);
     const metadata = {
-      ...modal.initialMetadata,
+      ...baseMetadata,
       tags: tags.length > 0 ? tags : undefined,
     };
     try {
@@ -93,7 +113,7 @@ function CardEditorModalInner() {
     } finally {
       setSaving(false);
     }
-  }, [content, tags, modal, handleUpdate, handleCreate, closeCardEditor]);
+  }, [content, tags, modal, isNewCard, latestCard, handleUpdate, handleCreate, closeCardEditor]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
