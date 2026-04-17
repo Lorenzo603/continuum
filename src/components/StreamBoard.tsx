@@ -21,6 +21,7 @@ import { restrictToVerticalAxis } from "./dndModifiers";
 import { useStreams } from "@/hooks/useStreams";
 import { useFilteredStreams } from "@/hooks/useFilteredStreams";
 import { useStreamStore } from "@/stores/streamStore";
+import { useCardStore } from "@/stores/cardStore";
 import { useUIStore } from "@/stores/uiStore";
 import { StreamRow } from "./StreamRow";
 import { StreamSearchBar } from "./StreamSearchBar";
@@ -37,9 +38,10 @@ interface StreamBoardProps {
 export function StreamBoard({ workspaceId }: StreamBoardProps) {
   const { streams, loading, error } = useStreams(workspaceId);
   const { deleteStream, archiveStream, unarchiveStream, reorderStreams, archivedStreams } = useStreamStore();
-  const { isCreatingStream, setCreatingStream, searchQuery, showArchived } = useUIStore();
-  const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived);
-  const isFiltering = searchQuery.trim() !== '' || showArchived;
+  const { isCreatingStream, setCreatingStream, searchQuery, showArchived, statusFilters } = useUIStore();
+  const cardsByStream = useCardStore((s) => s.cardsByStream);
+  const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived, statusFilters, cardsByStream);
+  const isFiltering = searchQuery.trim() !== '' || showArchived || statusFilters.size > 0;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

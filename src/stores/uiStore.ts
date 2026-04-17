@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { CardMetadata } from "@/types";
+import type { CardMetadata, CardStatus } from "@/types";
 
 export type CardEditorMode = "view" | "edit";
 
@@ -19,6 +19,7 @@ interface UIState {
   cardEditorModal: CardEditorModalState | null;
   searchQuery: string;
   showArchived: boolean;
+  statusFilters: Set<CardStatus>;
 
   toggleStreamExpand: (streamId: string) => void;
   setEditingCard: (cardId: string | null) => void;
@@ -28,6 +29,8 @@ interface UIState {
   closeCardEditor: () => void;
   setSearchQuery: (query: string) => void;
   setShowArchived: (show: boolean) => void;
+  toggleStatusFilter: (status: CardStatus) => void;
+  clearStatusFilters: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -38,6 +41,7 @@ export const useUIStore = create<UIState>((set) => ({
   cardEditorModal: null,
   searchQuery: "",
   showArchived: false,
+  statusFilters: new Set<CardStatus>(),
 
   toggleStreamExpand: (streamId) =>
     set((state) => {
@@ -57,4 +61,15 @@ export const useUIStore = create<UIState>((set) => ({
   closeCardEditor: () => set({ cardEditorModal: null }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setShowArchived: (show) => set({ showArchived: show }),
+  toggleStatusFilter: (status) =>
+    set((state) => {
+      const next = new Set(state.statusFilters);
+      if (next.has(status)) {
+        next.delete(status);
+      } else {
+        next.add(status);
+      }
+      return { statusFilters: next };
+    }),
+  clearStatusFilters: () => set({ statusFilters: new Set<CardStatus>() }),
 }));
