@@ -71,7 +71,7 @@ export default async function LatestCardsPage({ params }: LatestCardsPageProps) 
               </p>
             </div>
           ) : (
-            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 2xl:columns-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {latestCards.map((item) => (
                 <LatestCardTile key={item.streamId} item={item} />
               ))}
