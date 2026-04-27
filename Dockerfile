@@ -15,11 +15,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # PostgreSQL is the default DB for the deployed image
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV DB_TYPE=postgres
 ENV DATABASE_URL="postgresql://localhost:5432/continuum"
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_bWludC1zdGFsbGlvbi0zMS5jbGVyay5hY2NvdW50cy5kZXYk"
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
