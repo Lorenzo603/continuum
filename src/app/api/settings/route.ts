@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/lib/settings";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { updateSettingsSchema } from "@/lib/validations";
 
 export async function GET() {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const row = await getSettings();
     return NextResponse.json(row);
   } catch (error) {
@@ -17,6 +23,11 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const body = await request.json();
     const parsed = updateSettingsSchema.safeParse(body);
 

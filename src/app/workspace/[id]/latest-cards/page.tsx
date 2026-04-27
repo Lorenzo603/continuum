@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { LatestCardTile } from "@/components/LatestCardTile";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
 import { WorkspaceViewNav } from "@/components/WorkspaceViewNav";
+import { AuthControls } from "@/components/AuthControls";
 import { getLatestCardsByWorkspace } from "@/lib/latestCards";
 import { workspaceIdParamSchema } from "@/lib/validations";
 import { getWorkspaceById } from "@/lib/workspaces";
@@ -11,6 +13,11 @@ interface LatestCardsPageProps {
 }
 
 export default async function LatestCardsPage({ params }: LatestCardsPageProps) {
+  const { userId } = await auth();
+  if (!userId) {
+    notFound();
+  }
+
   const { id } = await params;
   const parsedId = workspaceIdParamSchema.safeParse(id);
 
@@ -18,13 +25,13 @@ export default async function LatestCardsPage({ params }: LatestCardsPageProps) 
     notFound();
   }
 
-  const workspace = await getWorkspaceById(parsedId.data);
+  const workspace = await getWorkspaceById(parsedId.data, userId);
 
   if (!workspace) {
     notFound();
   }
 
-  const latestCards = await getLatestCardsByWorkspace(workspace.id);
+  const latestCards = await getLatestCardsByWorkspace(workspace.id, userId);
 
   return (
     <main className="flex min-h-screen bg-background">
@@ -45,9 +52,12 @@ export default async function LatestCardsPage({ params }: LatestCardsPageProps) 
                 className="hidden h-7 w-auto dark:block"
               />
             </div>
-            <p className="truncate text-sm text-muted" title={workspace.name}>
-              {workspace.name}
-            </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <p className="truncate text-sm text-muted" title={workspace.name}>
+                {workspace.name}
+              </p>
+              <AuthControls />
+            </div>
           </div>
         </header>
 

@@ -86,6 +86,7 @@ async function seed() {
   console.log(`🌱 Seeding database (${DB_TYPE})...`);
 
   const { db, workspaces, streams, cards, cleanup } = createConnection();
+  const seedUserId = process.env.SEED_USER_ID ?? "seed-user";
 
   // Clear existing data
   await db.delete(cards);
@@ -93,9 +94,13 @@ async function seed() {
   await db.delete(workspaces);
 
   // Helper to insert a workspace
-  async function insertWorkspace(name: string, description: string | null = null) {
+  async function insertWorkspace(
+    name: string,
+    description: string | null = null,
+    userId: string = seedUserId,
+  ) {
     const id = uuid();
-    await db.insert(workspaces).values({ id, name, description });
+    await db.insert(workspaces).values({ id, userId, name, description });
     return id;
   }
 
@@ -105,9 +110,12 @@ async function seed() {
     orderIndex: number,
     workspaceId: string,
     parentStreamId: string | null = null,
+    userId: string = seedUserId,
   ) {
     const id = uuid();
-    await db.insert(streams).values({ id, title, workspaceId, parentStreamId, orderIndex });
+    await db
+      .insert(streams)
+      .values({ id, userId, title, workspaceId, parentStreamId, orderIndex });
     return id;
   }
 
@@ -115,12 +123,14 @@ async function seed() {
   async function insertCards(
     streamId: string,
     items: { content: string; status?: StatusValue; tags?: string[] }[],
+    userId: string = seedUserId,
   ) {
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const isLast = i === items.length - 1;
       await db.insert(cards).values({
         id: uuid(),
+        userId,
         streamId,
         content: item.content,
         version: i + 1,

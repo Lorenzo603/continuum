@@ -1,50 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
-import type { Workspace } from "@/types";
+import { AuthControls } from "@/components/AuthControls";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 
 export default function Home() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const loadWorkspaces = async () => {
-      try {
-        setLoadError(null);
-        const response = await fetch("/api/workspaces", {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to load workspaces");
-        }
-
-        const data: Workspace[] = await response.json();
-        setWorkspaces(data);
-      } catch (error) {
-        if (controller.signal.aborted) {
-          return;
-        }
-        setLoadError(error instanceof Error ? error.message : "Failed to load workspaces");
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void loadWorkspaces();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
+  const { isLoaded, isSignedIn } = useAuth();
+  const {
+    workspaces,
+    loading,
+    error: loadError,
+    authRequired,
+  } = useWorkspaces();
 
   return (
     <main className="flex min-h-screen bg-background">
@@ -52,7 +21,7 @@ export default function Home() {
 
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-40 border-b border-border/40 bg-background">
-          <div className="mx-auto max-w-screen-2xl flex items-center px-4 py-3.5 sm:px-6">
+          <div className="mx-auto max-w-screen-2xl flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
             <img
               src="/img/logo/continuum-logo-light.svg"
               alt="Continuum"
@@ -63,6 +32,7 @@ export default function Home() {
               alt="Continuum"
               className="h-7 w-auto hidden dark:block"
             />
+            <AuthControls />
           </div>
         </header>
         <div className="mx-auto w-full max-w-screen-2xl px-4 py-8 sm:px-6">
@@ -72,7 +42,16 @@ export default function Home() {
               Select a workspace to open its board. Workspace boards are available at the URL pattern /workspace/&lt;id&gt;.
             </p>
 
-            {loading ? (
+            {!isLoaded ? (
+              <p className="mt-6 text-sm text-muted">Checking session...</p>
+            ) : !isSignedIn || authRequired ? (
+              <div className="mt-6 rounded-lg border border-border/50 bg-card/40 p-4">
+                <p className="text-sm text-muted">Sign in to view your workspaces.</p>
+                <div className="mt-3">
+                  <AuthControls />
+                </div>
+              </div>
+            ) : loading ? (
               <p className="mt-6 text-sm text-muted">Loading workspaces...</p>
             ) : loadError ? (
               <p className="mt-6 text-sm text-danger">{loadError}</p>

@@ -2,6 +2,7 @@
 
 export interface Workspace {
   id: string;
+  userId: string;
   name: string;
   description: string | null;
   createdAt: string;
@@ -11,6 +12,7 @@ export type StreamStatus = "active" | "archived";
 
 export interface Stream {
   id: string;
+  userId: string;
   title: string;
   workspaceId: string;
   parentStreamId: string | null;
@@ -22,6 +24,7 @@ export interface Stream {
 
 export interface Card {
   id: string;
+  userId: string;
   streamId: string;
   content: string;
   version: number;

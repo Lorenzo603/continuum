@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { getStreamTree, getArchivedStreams, createStream } from "@/lib/streams";
+import { getWorkspaceById } from "@/lib/workspaces";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { createStreamSchema } from "@/lib/validations";
 
 export async function GET(request: Request) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { searchParams } = new URL(request.url);
     const workspaceId = searchParams.get("workspaceId");
 
@@ -14,8 +21,16 @@ export async function GET(request: Request) {
       );
     }
 
-    const tree = await getStreamTree(workspaceId);
-    const archived = await getArchivedStreams(workspaceId);
+    const workspace = await getWorkspaceById(workspaceId, userId);
+    if (!workspace) {
+      return NextResponse.json(
+        { error: "Workspace not found" },
+        { status: 404 }
+      );
+    }
+
+    const tree = await getStreamTree(workspaceId, userId);
+    const archived = await getArchivedStreams(workspaceId, userId);
     return NextResponse.json({ tree, archived });
   } catch (error) {
     console.error("Failed to fetch streams:", error);
@@ -28,6 +43,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const body = await request.json();
     const parsed = createStreamSchema.safeParse(body);
 
@@ -38,7 +58,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const stream = await createStream(parsed.data);
+    const stream = await createStream(parsed.data, userId);
+    if (!stream) {
+      return NextResponse.json(
+        { error: "Workspace not found" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(stream, { status: 201 });
   } catch (error) {
     console.error("Failed to create stream:", error);

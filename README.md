@@ -11,12 +11,20 @@ A timeline-based workstream evolution system built with Next.js. Organize person
 - **ORM**: Drizzle ORM
 - **State**: Zustand
 - **Validation**: Zod
+- **Authentication**: Clerk
 
 ## Getting Started
 
 ```bash
 # Install dependencies
 npm install
+
+# Configure environment
+# Create .env.local manually
+
+# Required Clerk variables
+# NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+# CLERK_SECRET_KEY=sk_test_...
 
 # Push database schema
 npm run db:push
@@ -28,25 +36,29 @@ npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:4000](http://localhost:4000).
 
-## Access Token Protection
+## Authentication (Clerk)
 
-The app includes a `proxy` middleware that can protect all routes (including API routes) using a shared token.
+Continuum uses Clerk as the primary auth layer.
 
-Set an environment variable:
+Required environment variables:
 
 ```bash
-ACCESS_TOKEN=your-secret-token
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
 ```
 
-When `ACCESS_TOKEN` is set, each request must provide one of:
+- All app pages are protected by Clerk middleware.
+- All API routes are protected and enforce per-user ownership for workspaces, streams, and cards.
+- Unauthorized resource access returns `404` for tenant isolation, while unauthenticated access returns `401`.
 
-- `Authorization: Bearer <token>`
-- `X-Access-Token: <token>`
+### Sign-in routes
 
-If the token is missing or invalid, the app returns `401 Unauthorized`.
-If `ACCESS_TOKEN` is not set, auth checks are skipped (development mode).
+The app exposes Clerk routes at:
+
+- `/sign-in`
+- `/sign-up`
 
 ## MCP Server (for VS Code Agents)
 
@@ -68,6 +80,17 @@ This repo includes a local MCP server that exposes Continuum operations over std
 ### Run locally
 
 ```bash
+# Required for protected API calls from MCP:
+# Option A: provide a pre-minted Clerk bearer token
+# CLERK_MCP_BEARER_TOKEN=<clerk-jwt>
+#
+# Option B: configure client-credentials flow
+# CLERK_M2M_TOKEN_URL=https://.../oauth/token
+# CLERK_M2M_CLIENT_ID=...
+# CLERK_M2M_CLIENT_SECRET=...
+# CLERK_M2M_AUDIENCE=...   # optional
+# CLERK_M2M_SCOPE=...      # optional
+
 npm run mcp:server
 ```
 

@@ -8,8 +8,10 @@ interface StreamState {
   currentWorkspaceId: string | null;
   loading: boolean;
   error: string | null;
+  authRequired: boolean;
 
   fetchStreams: (workspaceId: string) => Promise<void>;
+  resetForSignedOut: () => void;
   addStream: (title: string, workspaceId: string, parentStreamId?: string | null) => Promise<void>;
   updateStream: (
     id: string,
@@ -30,6 +32,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   currentWorkspaceId: null,
   loading: false,
   error: null,
+  authRequired: false,
 
   fetchStreams: async (workspaceId: string) => {
     const previousWorkspaceId = get().currentWorkspaceId;
@@ -42,15 +45,40 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     });
     try {
       const res = await fetch(`/api/streams?workspaceId=${encodeURIComponent(workspaceId)}`);
+      if (res.status === 401 || res.status === 403) {
+        set({
+          streams: [],
+          archivedStreams: [],
+          loading: false,
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to fetch streams");
       const data = await res.json();
-      set({ streams: data.tree, archivedStreams: data.archived, loading: false });
+      set({
+        streams: data.tree,
+        archivedStreams: data.archived,
+        loading: false,
+        authRequired: false,
+      });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Unknown error",
         loading: false,
       });
     }
+  },
+
+  resetForSignedOut: () => {
+    set({
+      streams: [],
+      archivedStreams: [],
+      currentWorkspaceId: null,
+      loading: false,
+      error: null,
+      authRequired: true,
+    });
   },
 
   addStream: async (title, workspaceId, parentStreamId = null) => {
@@ -61,6 +89,10 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, workspaceId, parentStreamId }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({ error: "Authentication required", authRequired: true });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to create stream");
       // Expand parent so the new substream is immediately visible
       if (parentStreamId) {
@@ -96,6 +128,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          streams: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to update stream");
       // If orderIndex changed, refetch for proper ordering
       if (data.orderIndex !== undefined) {
@@ -116,6 +156,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     set({ streams: removeNodeFromTree(prev, id) });
     try {
       const res = await fetch(`/api/streams/${id}`, { method: "DELETE" });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          streams: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to delete stream");
     } catch (error) {
       set({
@@ -135,6 +183,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "archived" }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          streams: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to archive stream");
       // Refetch to update archived list
       const wsId = get().currentWorkspaceId;
@@ -157,6 +213,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "active" }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          archivedStreams: prevArchived,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to unarchive stream");
       // Refetch to get the restored stream in the active tree
       const wsId = get().currentWorkspaceId;
@@ -181,6 +245,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderedIds }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          streams: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to reorder streams");
     } catch (error) {
       set({

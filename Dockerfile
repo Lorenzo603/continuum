@@ -15,9 +15,11 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # PostgreSQL is the default DB for the deployed image
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DB_TYPE=postgres
 ENV DATABASE_URL="postgresql://localhost:5432/continuum"
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 RUN npm run build
 
@@ -31,6 +33,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DB_TYPE=postgres
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# Set via runtime environment/secret manager in production.
+ENV CLERK_SECRET_KEY=""
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

@@ -5,10 +5,12 @@ interface CardState {
   cardsByStream: Record<string, Card[]>;
   loading: Record<string, boolean>;
   error: string | null;
+  authRequired: boolean;
   /** Internal mutation counter per stream — prevents stale fetches from overwriting mutation results */
   _mutationVersion: Record<string, number>;
 
   fetchCards: (streamId: string, workspaceId?: string) => Promise<void>;
+  resetForSignedOut: () => void;
   createCard: (
     streamId: string,
     content: string,
@@ -27,6 +29,7 @@ export const useCardStore = create<CardState>((set, get) => ({
   cardsByStream: {},
   loading: {},
   error: null,
+  authRequired: false,
   _mutationVersion: {},
 
   fetchCards: async (streamId, workspaceId) => {
@@ -45,6 +48,13 @@ export const useCardStore = create<CardState>((set, get) => ({
       const res = await fetch(`/api/streams/${streamId}/cards${workspaceQuery}`, {
         cache: "no-store",
       });
+      if (res.status === 401 || res.status === 403) {
+        set((state) => ({
+          loading: { ...state.loading, [streamId]: false },
+          authRequired: true,
+        }));
+        return;
+      }
       if (!res.ok) throw new Error("Failed to fetch cards");
       const data = await res.json();
       // Only write if no mutation happened during the fetch
@@ -52,6 +62,7 @@ export const useCardStore = create<CardState>((set, get) => ({
         set((state) => ({
           cardsByStream: { ...state.cardsByStream, [streamId]: data },
           loading: { ...state.loading, [streamId]: false },
+          authRequired: false,
         }));
       } else {
         set((state) => ({
@@ -66,6 +77,16 @@ export const useCardStore = create<CardState>((set, get) => ({
     }
   },
 
+  resetForSignedOut: () => {
+    set({
+      cardsByStream: {},
+      loading: {},
+      error: null,
+      authRequired: true,
+      _mutationVersion: {},
+    });
+  },
+
   createCard: async (streamId, content, metadata = null) => {
     const prev = get().cardsByStream[streamId] ?? [];
     // Bump mutation version to invalidate any in-flight fetchCards
@@ -73,6 +94,7 @@ export const useCardStore = create<CardState>((set, get) => ({
     // Optimistic: add a temporary card
     const optimisticCard: Card = {
       id: `temp-${Date.now()}`,
+      userId: prev[prev.length - 1]?.userId ?? "optimistic-user",
       streamId,
       content,
       version: prev.length > 0 ? prev[prev.length - 1].version + 1 : 1,
@@ -106,6 +128,14 @@ export const useCardStore = create<CardState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ streamId, content, metadata }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set((state) => ({
+          cardsByStream: { ...state.cardsByStream, [streamId]: prev },
+          error: "Authentication required",
+          authRequired: true,
+        }));
+        return;
+      }
       if (!res.ok) throw new Error("Failed to create card");
       const newCard: Card = await res.json();
 
@@ -117,6 +147,7 @@ export const useCardStore = create<CardState>((set, get) => ({
         const data = await cardsRes.json();
         set((state) => ({
           cardsByStream: { ...state.cardsByStream, [streamId]: data },
+          authRequired: false,
         }));
       } else {
         // Fallback: at least replace the optimistic temp card with the real server card
@@ -164,6 +195,14 @@ export const useCardStore = create<CardState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, metadata }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set((state) => ({
+          cardsByStream: { ...state.cardsByStream, [streamId]: prev },
+          error: "Authentication required",
+          authRequired: true,
+        }));
+        return;
+      }
       if (!res.ok) throw new Error("Failed to update card");
       const updatedCard: Card = await res.json();
 
@@ -175,6 +214,7 @@ export const useCardStore = create<CardState>((set, get) => ({
         );
         return {
           cardsByStream: { ...state.cardsByStream, [streamId]: updated },
+          authRequired: false,
         };
       });
     } catch (error) {
@@ -202,6 +242,14 @@ export const useCardStore = create<CardState>((set, get) => ({
 
     try {
       const res = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      if (res.status === 401 || res.status === 403) {
+        set((state) => ({
+          cardsByStream: { ...state.cardsByStream, [streamId]: prev },
+          error: "Authentication required",
+          authRequired: true,
+        }));
+        return;
+      }
       if (!res.ok) throw new Error("Failed to delete card");
       // Re-fetch to get accurate server state
       const cardsRes = await fetch(`/api/streams/${streamId}/cards`, { cache: "no-store" });
@@ -209,6 +257,7 @@ export const useCardStore = create<CardState>((set, get) => ({
         const data = await cardsRes.json();
         set((state) => ({
           cardsByStream: { ...state.cardsByStream, [streamId]: data },
+          authRequired: false,
         }));
       }
     } catch (error) {

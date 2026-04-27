@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getWorkspaceByName } from "@/lib/workspaces";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { searchParams } = new URL(request.url);
     const name = searchParams.get("name");
 
@@ -13,7 +19,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const workspace = await getWorkspaceByName(name);
+    const workspace = await getWorkspaceByName(name, userId);
     if (!workspace) {
       return NextResponse.json(
         { error: "Workspace not found" },

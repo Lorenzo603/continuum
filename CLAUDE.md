@@ -15,6 +15,7 @@ Continuum is a **timeline-based workstream organizer** — a Next.js web app for
 - **Drag & Drop:** @dnd-kit
 - **Fonts:** Outfit, DM Sans (next/font/google)
 - **Toasts:** Sonner
+- **Authentication:** Clerk
 - **MCP:** Model Context Protocol server via `@modelcontextprotocol/sdk`
 
 ## Quick Start
@@ -46,8 +47,14 @@ Default dev uses SQLite (`./continuum.db`). No extra setup needed.
 | `DB_TYPE` | `"sqlite"` or `"postgres"` | `"sqlite"` |
 | `SQLITE_PATH` | Path to SQLite file | `"./continuum.db"` |
 | `DATABASE_URL` | PostgreSQL connection string | — |
-| `ACCESS_TOKEN` | Optional API auth token | — |
-| `ACCESS_TOKEN_CHECK_DISABLED` | Set `"true"` to skip auth | — |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (client) | — |
+| `CLERK_SECRET_KEY` | Clerk secret key (server) | — |
+| `CLERK_MCP_BEARER_TOKEN` | Pre-minted Clerk bearer token for MCP | — |
+| `CLERK_M2M_TOKEN_URL` | OAuth token endpoint for client-credentials flow | — |
+| `CLERK_M2M_CLIENT_ID` | Machine-to-machine client id for MCP | — |
+| `CLERK_M2M_CLIENT_SECRET` | Machine-to-machine client secret for MCP | — |
+| `CLERK_M2M_AUDIENCE` | Optional OAuth audience for MCP token requests | — |
+| `CLERK_M2M_SCOPE` | Optional OAuth scope for MCP token requests | — |
 | `CONTINUUM_API_BASE_URL` | Base URL for MCP server API calls | `"http://localhost:3000"` |
 
 ## Project Structure
@@ -85,7 +92,7 @@ src/
 │   └── themeStore.ts
 ├── types/
 │   └── index.ts            # Core domain types (Workspace, Stream, Card, etc.)
-└── proxy.ts                # Access token middleware logic
+└── proxy.ts                # Clerk auth middleware
 ```
 
 ## Architecture & Conventions
@@ -110,7 +117,8 @@ src/
 - RESTful JSON API under `src/app/api/`.
 - All input validated with Zod schemas from `src/lib/validations.ts`.
 - Lookup/resolve endpoints: `GET /api/workspaces/resolve?name=...` and `GET /api/streams/resolve?title=...&workspaceId=...`.
-- Optional access token auth via `ACCESS_TOKEN` env var (checked in `src/proxy.ts`).
+- Clerk middleware protects all app/API routes (excluding static assets and auth routes).
+- Workspace/stream/card API handlers enforce per-user ownership via Clerk `userId` filtering.
 
 ### Client State
 
@@ -130,7 +138,7 @@ src/
 - Stdio-based MCP server at `src/mcp/server.ts`, run via `npm run mcp:server`.
 - Exposes tools for AI agents: lookup workspaces/streams by name, create/update cards and streams.
 - Configured in VS Code via `.vscode/mcp.json` (uses top-level `servers` key, not `mcpServers`).
-- Uses `CONTINUUM_API_BASE_URL` and `ACCESS_TOKEN` env vars to call the app's REST API.
+- Uses `CONTINUUM_API_BASE_URL` plus Clerk machine auth env vars to call protected REST APIs.
 
 ### Docker
 

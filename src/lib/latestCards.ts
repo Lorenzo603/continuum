@@ -1,5 +1,5 @@
 import { db, cards } from "@/db";
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getStreamTree } from "@/lib/streams";
 import type { Card, StreamNode } from "@/types";
 
@@ -54,8 +54,11 @@ function isMoreRecentCard(candidate: Card, current: Card): boolean {
   return candidate.id.localeCompare(current.id) > 0;
 }
 
-export async function getLatestCardsByWorkspace(workspaceId: string): Promise<LatestCardByStream[]> {
-  const streamTree = await getStreamTree(workspaceId);
+export async function getLatestCardsByWorkspace(
+  workspaceId: string,
+  userId: string,
+): Promise<LatestCardByStream[]> {
+  const streamTree = await getStreamTree(workspaceId, userId);
   const orderedStreams = flattenStreamTree(streamTree);
 
   if (orderedStreams.length === 0) {
@@ -66,7 +69,7 @@ export async function getLatestCardsByWorkspace(workspaceId: string): Promise<La
   const workspaceCards = await db
     .select()
     .from(cards)
-    .where(inArray(cards.streamId, streamIds));
+    .where(and(inArray(cards.streamId, streamIds), eq(cards.userId, userId)));
 
   if (workspaceCards.length === 0) {
     return [];

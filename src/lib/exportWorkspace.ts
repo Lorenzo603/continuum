@@ -24,7 +24,7 @@ export async function exportWorkspaceToJson(workspaceId: string): Promise<void> 
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `workspace-export-${timestamp}.json`;
+  const filename = `continuum-workspace-export-${timestamp}.json`;
 
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);

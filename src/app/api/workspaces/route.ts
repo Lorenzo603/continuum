@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAllWorkspaces, createWorkspace } from "@/lib/workspaces";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { createWorkspaceSchema } from "@/lib/validations";
 
 export async function GET() {
   try {
-    const workspaces = await getAllWorkspaces();
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
+    const workspaces = await getAllWorkspaces(userId);
     return NextResponse.json(workspaces);
   } catch (error) {
     console.error("Failed to fetch workspaces:", error);
@@ -17,6 +23,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const body = await request.json();
     const parsed = createWorkspaceSchema.safeParse(body);
 
@@ -27,7 +38,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const workspace = await createWorkspace(parsed.data);
+    const workspace = await createWorkspace(parsed.data, userId);
     return NextResponse.json(workspace, { status: 201 });
   } catch (error) {
     console.error("Failed to create workspace:", error);

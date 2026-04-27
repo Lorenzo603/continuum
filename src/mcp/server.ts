@@ -8,7 +8,19 @@ import { CARD_STATUSES, type CardStatus } from "@/types";
 
 const statusValues = CARD_STATUSES.map((status) => status.value) as [CardStatus, ...CardStatus[]];
 const apiBaseUrl = process.env.CONTINUUM_API_BASE_URL ?? "http://localhost:3000";
-const accessToken = process.env.ACCESS_TOKEN || "";
+const clerkStaticBearerToken = process.env.CLERK_MCP_BEARER_TOKEN?.trim() ?? "";
+const clerkM2MTokenUrl = process.env.CLERK_M2M_TOKEN_URL?.trim() ?? "";
+const clerkM2MClientId = process.env.CLERK_M2M_CLIENT_ID?.trim() ?? "";
+const clerkM2MClientSecret = process.env.CLERK_M2M_CLIENT_SECRET?.trim() ?? "";
+const clerkM2MAudience = process.env.CLERK_M2M_AUDIENCE?.trim() ?? "";
+const clerkM2MScope = process.env.CLERK_M2M_SCOPE?.trim() ?? "";
+
+type MachineTokenCache = {
+  token: string;
+  expiresAtEpochMs: number;
+};
+
+let machineTokenCache: MachineTokenCache | null = null;
 
 type ApiRequestOptions = {
   method?: "GET" | "POST" | "PATCH";
@@ -46,6 +58,74 @@ function buildApiUrl(pathname: string, query?: Record<string, string | undefined
   return url;
 }
 
+function normalizeBearerToken(value: string) {
+  return value.startsWith("Bearer ") ? value.slice("Bearer ".length).trim() : value.trim();
+}
+
+type TokenEndpointResponse = {
+  access_token?: string;
+  expires_in?: number;
+};
+
+async function getMachineAccessToken(): Promise<string | null> {
+  if (clerkStaticBearerToken) {
+    return normalizeBearerToken(clerkStaticBearerToken);
+  }
+
+  if (!clerkM2MTokenUrl || !clerkM2MClientId || !clerkM2MClientSecret) {
+    return null;
+  }
+
+  const now = Date.now();
+  if (machineTokenCache && now < machineTokenCache.expiresAtEpochMs - 30_000) {
+    return machineTokenCache.token;
+  }
+
+  const requestBody = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id: clerkM2MClientId,
+    client_secret: clerkM2MClientSecret,
+  });
+
+  if (clerkM2MAudience) {
+    requestBody.set("audience", clerkM2MAudience);
+  }
+
+  if (clerkM2MScope) {
+    requestBody.set("scope", clerkM2MScope);
+  }
+
+  const response = await fetch(clerkM2MTokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: requestBody.toString(),
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json().catch(() => null)) as TokenEndpointResponse | null;
+  if (!payload?.access_token) {
+    return null;
+  }
+
+  const token = normalizeBearerToken(payload.access_token);
+  const expiresInSeconds =
+    typeof payload.expires_in === "number" && Number.isFinite(payload.expires_in)
+      ? payload.expires_in
+      : 300;
+
+  machineTokenCache = {
+    token,
+    expiresAtEpochMs: now + Math.max(60, expiresInSeconds) * 1000,
+  };
+
+  return token;
+}
+
 function parseErrorPayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
     return { message: "Request failed", details: null };
@@ -62,10 +142,19 @@ function parseErrorPayload(payload: unknown) {
 
 async function apiRequest<T>(pathname: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
   try {
+    const machineToken = await getMachineAccessToken();
+    if (!machineToken) {
+      return {
+        ok: false,
+        status: 401,
+        message: "Missing Clerk machine authentication configuration",
+      };
+    }
+
     const response = await fetch(buildApiUrl(pathname, options.query), {
       method: options.method ?? "GET",
       headers: {
-        "X-Access-Token": accessToken,
+        Authorization: `Bearer ${machineToken}`,
         ...(options.body ? { "Content-Type": "application/json" } : {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getStreamByTitle } from "@/lib/streams";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { searchParams } = new URL(request.url);
     const title = searchParams.get("title");
     const workspaceId = searchParams.get("workspaceId") ?? undefined;
@@ -14,7 +20,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const stream = await getStreamByTitle(title, workspaceId);
+    const stream = await getStreamByTitle(title, userId, workspaceId);
     if (!stream) {
       return NextResponse.json(
         { error: "Stream not found" },

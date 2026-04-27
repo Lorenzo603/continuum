@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { StreamBoard } from "@/components/StreamBoard";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
+import { AuthControls } from "@/components/AuthControls";
 import { getWorkspaceById } from "@/lib/workspaces";
 import { workspaceIdParamSchema } from "@/lib/validations";
 
@@ -9,6 +11,11 @@ interface WorkspacePageProps {
 }
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
+  const { userId } = await auth();
+  if (!userId) {
+    notFound();
+  }
+
   const { id } = await params;
   const parsedId = workspaceIdParamSchema.safeParse(id);
 
@@ -16,7 +23,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     notFound();
   }
 
-  const workspace = await getWorkspaceById(parsedId.data);
+  const workspace = await getWorkspaceById(parsedId.data, userId);
   if (!workspace) {
     notFound();
   }
@@ -40,9 +47,12 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                 className="h-7 w-auto hidden dark:block"
               />
             </div>
-            <p className="truncate text-sm text-muted" title={workspace.name}>
-              {workspace.name}
-            </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <p className="truncate text-sm text-muted" title={workspace.name}>
+                {workspace.name}
+              </p>
+              <AuthControls />
+            </div>
           </div>
         </header>
 

@@ -4,6 +4,7 @@ import {
   updateWorkspace,
   deleteWorkspace,
 } from "@/lib/workspaces";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { updateWorkspaceSchema } from "@/lib/validations";
 
 export async function GET(
@@ -11,8 +12,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
-    const workspace = await getWorkspaceById(id);
+    const workspace = await getWorkspaceById(id, userId);
 
     if (!workspace) {
       return NextResponse.json(
@@ -36,6 +42,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
     const body = await request.json();
     const parsed = updateWorkspaceSchema.safeParse(body);
@@ -47,7 +58,7 @@ export async function PATCH(
       );
     }
 
-    const workspace = await updateWorkspace(id, parsed.data);
+    const workspace = await updateWorkspace(id, parsed.data, userId);
 
     if (!workspace) {
       return NextResponse.json(
@@ -71,8 +82,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
-    await deleteWorkspace(id);
+    const workspace = await getWorkspaceById(id, userId);
+    if (!workspace) {
+      return NextResponse.json(
+        { error: "Workspace not found" },
+        { status: 404 }
+      );
+    }
+
+    await deleteWorkspace(id, userId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete workspace:", error);

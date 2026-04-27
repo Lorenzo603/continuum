@@ -2,6 +2,7 @@ import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core
 
 export const workspaces = sqliteTable("workspaces", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
   createdAt: text("created_at")
@@ -11,6 +12,7 @@ export const workspaces = sqliteTable("workspaces", {
 
 export const streams = sqliteTable("streams", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   workspaceId: text("workspace_id")
     .notNull()
@@ -30,6 +32,7 @@ export const cards = sqliteTable(
   "cards",
   {
     id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
     streamId: text("stream_id")
       .notNull()
       .references(() => streams.id, { onDelete: "cascade" }),

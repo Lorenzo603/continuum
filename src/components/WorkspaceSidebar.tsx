@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
+import { AuthControls } from "@/components/AuthControls";
 import { useThemeStore, hydrateTheme } from "@/stores/themeStore";
 import { exportWorkspaceToJson } from "@/lib/exportWorkspace";
 import { toast } from "sonner";
@@ -19,6 +20,9 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
     workspaces,
     activeWorkspaceId,
     loading,
+    authRequired,
+    isLoaded,
+    isSignedIn,
     setActiveWorkspace,
     addWorkspace,
     updateWorkspace,
@@ -35,6 +39,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   const { theme, toggleTheme } = useThemeStore();
   const selectedWorkspaceId = currentWorkspaceId ?? activeWorkspaceId;
   const exportWorkspaceId = currentWorkspaceId;
+  const actionsDisabled = !isLoaded || !isSignedIn || authRequired;
 
   useEffect(() => {
     hydrateTheme();
@@ -47,6 +52,10 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   }, [activeWorkspaceId, currentWorkspaceId, setActiveWorkspace]);
 
   const navigateToWorkspace = (workspaceId: string) => {
+    if (actionsDisabled) {
+      return;
+    }
+
     setActiveWorkspace(workspaceId);
     const targetPath = `/workspace/${workspaceId}`;
     if (pathname !== targetPath) {
@@ -72,6 +81,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (actionsDisabled) return;
     if (!newName.trim()) return;
 
     setSaving(true);
@@ -91,6 +101,10 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   };
 
   const handleDelete = async (id: string, name: string) => {
+    if (actionsDisabled) {
+      return;
+    }
+
     if (!confirm(`Delete workspace "${name}"? All streams and cards in it will be permanently deleted.`)) {
       return;
     }
@@ -120,6 +134,10 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   };
 
   const handleRename = async (id: string, currentName: string) => {
+    if (actionsDisabled) {
+      return;
+    }
+
     const trimmed = editingName.trim();
     if (!trimmed || trimmed === currentName) {
       cancelRename();
@@ -147,8 +165,9 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
         </h2>
         <button
           onClick={() => setIsCreating(true)}
-          className="rounded p-1 text-muted transition-colors hover:text-primary hover:bg-primary/10 cursor-pointer"
+          className="rounded p-1 text-muted transition-colors hover:text-primary hover:bg-primary/10 cursor-pointer disabled:pointer-events-none disabled:opacity-50"
           title="New workspace"
+          disabled={actionsDisabled}
         >
           <svg
             className="h-4 w-4"
@@ -168,6 +187,18 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
 
       {/* Workspace list */}
       <nav className="flex-1 overflow-y-auto px-2 py-2">
+        {!isLoaded && (
+          <p className="px-3 py-4 text-xs text-muted text-center">
+            Checking session...
+          </p>
+        )}
+
+        {isLoaded && (!isSignedIn || authRequired) && (
+          <p className="px-3 py-4 text-xs text-muted text-center">
+            Sign in to view your workspaces.
+          </p>
+        )}
+
         {loading && workspaces.length === 0 && (
           <div className="space-y-2 px-2">
             {[1, 2, 3].map((i) => (
@@ -179,7 +210,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
           </div>
         )}
 
-        {workspaces.map((ws) => {
+        {isLoaded && isSignedIn && !authRequired && workspaces.map((ws) => {
           const isEditing = editingWorkspaceId === ws.id;
           return (
             <div
@@ -299,7 +330,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
           );
         })}
 
-        {workspaces.length === 0 && !loading && (
+        {isLoaded && isSignedIn && !authRequired && workspaces.length === 0 && !loading && (
           <p className="px-3 py-4 text-xs text-muted text-center">
             No workspaces yet. Create one to get started.
           </p>
@@ -307,7 +338,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
       </nav>
 
       {/* Create workspace inline form */}
-      {isCreating && (
+      {isCreating && !actionsDisabled && (
         <div className="border-t border-border/50 px-3 py-3">
           <form onSubmit={handleCreate} className="flex flex-col gap-2">
             <input
@@ -386,6 +417,9 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
 
       {/* Theme toggle */}
       <div className="border-t border-border/50 px-3 py-3">
+        <div className="mb-2 px-3">
+          <AuthControls />
+        </div>
         <button
           onClick={toggleTheme}
           className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground"

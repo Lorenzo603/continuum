@@ -8,9 +8,11 @@ interface WorkspaceState {
   activeWorkspaceId: string | null;
   loading: boolean;
   error: string | null;
+  authRequired: boolean;
 
   fetchWorkspaces: () => Promise<void>;
   setActiveWorkspace: (id: string | null) => void;
+  resetForSignedOut: () => void;
   addWorkspace: (name: string, description?: string | null) => Promise<Workspace | null>;
   updateWorkspace: (
     id: string,
@@ -24,14 +26,28 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   activeWorkspaceId: null,
   loading: false,
   error: null,
+  authRequired: false,
 
   fetchWorkspaces: async () => {
     set({ loading: true, error: null });
     try {
       const res = await fetch("/api/workspaces");
+      if (res.status === 401 || res.status === 403) {
+        set({
+          workspaces: [],
+          activeWorkspaceId: null,
+          loading: false,
+          error: null,
+          authRequired: true,
+        });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+        }
+        return;
+      }
       if (!res.ok) throw new Error("Failed to fetch workspaces");
       const data: Workspace[] = await res.json();
-      set({ workspaces: data, loading: false });
+      set({ workspaces: data, loading: false, authRequired: false });
 
       const current = get().activeWorkspaceId;
       const saved = typeof window !== "undefined" ? localStorage.getItem(ACTIVE_WORKSPACE_KEY) : null;
@@ -64,6 +80,19 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
   },
 
+  resetForSignedOut: () => {
+    set({
+      workspaces: [],
+      activeWorkspaceId: null,
+      loading: false,
+      error: null,
+      authRequired: true,
+    });
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(ACTIVE_WORKSPACE_KEY);
+    }
+  },
+
   addWorkspace: async (name, description = null) => {
     try {
       const res = await fetch("/api/workspaces", {
@@ -71,11 +100,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description }),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({ error: "Authentication required", authRequired: true });
+        return null;
+      }
       if (!res.ok) throw new Error("Failed to create workspace");
       const workspace: Workspace = await res.json();
       set((state) => ({
         workspaces: [...state.workspaces, workspace],
         activeWorkspaceId: workspace.id,
+        authRequired: false,
       }));
       if (typeof window !== "undefined") localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspace.id);
       return workspace;
@@ -100,6 +134,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          workspaces: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to update workspace");
     } catch (error) {
       set({
@@ -127,6 +169,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     try {
       const res = await fetch(`/api/workspaces/${id}`, { method: "DELETE" });
+      if (res.status === 401 || res.status === 403) {
+        set({
+          workspaces: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
       if (!res.ok) throw new Error("Failed to delete workspace");
     } catch (error) {
       set({

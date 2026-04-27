@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCardById, updateCard, deleteCard } from "@/lib/cards";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { updateCardSchema } from "@/lib/validations";
 
 export async function GET(
@@ -7,8 +8,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
-    const card = await getCardById(id);
+    const card = await getCardById(id, userId);
 
     if (!card) {
       return NextResponse.json({ error: "Card not found" }, { status: 404 });
@@ -29,6 +35,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
     const body = await request.json();
     const parsed = updateCardSchema.safeParse(body);
@@ -41,7 +52,7 @@ export async function PATCH(
       );
     }
 
-    const card = await updateCard(id, parsed.data);
+    const card = await updateCard(id, userId, parsed.data);
     return NextResponse.json(card, { status: 201 });
   } catch (error) {
     const message =
@@ -60,8 +71,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
-    await deleteCard(id);
+    await deleteCard(id, userId);
     return NextResponse.json({ deleted: true });
   } catch (error) {
     const message =

@@ -1,33 +1,49 @@
-import { db, cards, DB_TYPE } from "@/db";
-import { eq, asc, desc, and } from "drizzle-orm";
+import { db, cards, streams, DB_TYPE } from "@/db";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import type { CardMetadata } from "@/types";
 
 type TransactionClient = typeof db;
 
-export async function getCards(streamId: string) {
+async function hasOwnedStream(streamId: string, userId: string): Promise<boolean> {
+  const ownedStream = await db
+    .select({ id: streams.id })
+    .from(streams)
+    .where(and(eq(streams.id, streamId), eq(streams.userId, userId)))
+    .limit(1);
+
+  return ownedStream.length > 0;
+}
+
+export async function getCards(streamId: string, userId: string) {
   return db
     .select()
     .from(cards)
-    .where(eq(cards.streamId, streamId))
+    .where(and(eq(cards.streamId, streamId), eq(cards.userId, userId)))
     .orderBy(asc(cards.version));
 }
 
-export async function getLatestCard(streamId: string) {
+export async function getLatestCard(streamId: string, userId: string) {
   const results = await db
     .select()
     .from(cards)
-    .where(and(eq(cards.streamId, streamId), eq(cards.isEditable, true)))
+    .where(
+      and(
+        eq(cards.streamId, streamId),
+        eq(cards.userId, userId),
+        eq(cards.isEditable, true),
+      ),
+    )
     .orderBy(desc(cards.version))
     .limit(1);
   return results[0] ?? null;
 }
 
-export async function getCardById(id: string) {
+export async function getCardById(id: string, userId: string) {
   const results = await db
     .select()
     .from(cards)
-    .where(eq(cards.id, id))
+    .where(and(eq(cards.id, id), eq(cards.userId, userId)))
     .limit(1);
   return results[0] ?? null;
 }
@@ -36,11 +52,16 @@ export async function createCard(data: {
   streamId: string;
   content: string;
   metadata?: CardMetadata | null;
-}) {
+}, userId: string) {
+  const streamExists = await hasOwnedStream(data.streamId, userId);
+  if (!streamExists) {
+    return null;
+  }
+
   const id = uuid();
 
   // Check if there's already an editable card and mark it non-editable
-  const existingEditable = await getLatestCard(data.streamId);
+  const existingEditable = await getLatestCard(data.streamId, userId);
   const version = existingEditable ? existingEditable.version + 1 : 1;
   const completedPreviousMetadata: CardMetadata = {
     ...(existingEditable?.metadata ?? {}),
@@ -49,6 +70,7 @@ export async function createCard(data: {
 
   const values = {
     id,
+    userId,
     streamId: data.streamId,
     content: data.content,
     version,
@@ -65,7 +87,7 @@ export async function createCard(data: {
             isEditable: false,
             metadata: completedPreviousMetadata,
           })
-          .where(eq(cards.id, existingEditable.id))
+          .where(and(eq(cards.id, existingEditable.id), eq(cards.userId, userId)))
           .run();
       }
       return tx.insert(cards).values(values).returning().get();
@@ -81,7 +103,7 @@ export async function createCard(data: {
           isEditable: false,
           metadata: completedPreviousMetadata,
         })
-        .where(eq(cards.id, existingEditable.id));
+        .where(and(eq(cards.id, existingEditable.id), eq(cards.userId, userId)));
     }
     const [result] = await tx.insert(cards).values(values).returning();
     return result;
@@ -90,9 +112,10 @@ export async function createCard(data: {
 
 export async function updateCard(
   cardId: string,
-  data: { content: string; metadata?: CardMetadata | null }
+  userId: string,
+  data: { content: string; metadata?: CardMetadata | null },
 ) {
-  const existingCard = await getCardById(cardId);
+  const existingCard = await getCardById(cardId, userId);
   if (!existingCard) {
     throw new Error("Card not found");
   }
@@ -106,14 +129,14 @@ export async function updateCard(
       content: data.content,
       metadata: data.metadata ?? existingCard.metadata,
     })
-    .where(eq(cards.id, cardId))
+    .where(and(eq(cards.id, cardId), eq(cards.userId, userId)))
     .returning();
 
   return result;
 }
 
-export async function deleteCard(cardId: string) {
-  const card = await getCardById(cardId);
+export async function deleteCard(cardId: string, userId: string) {
+  const card = await getCardById(cardId, userId);
   if (!card) {
     throw new Error("Card not found");
   }
@@ -124,12 +147,15 @@ export async function deleteCard(cardId: string) {
   if (DB_TYPE === "sqlite") {
     // better-sqlite3: synchronous transaction
     return db.transaction((tx: TransactionClient) => {
-      tx.delete(cards).where(eq(cards.id, cardId)).run();
+      tx
+        .delete(cards)
+        .where(and(eq(cards.id, cardId), eq(cards.userId, userId)))
+        .run();
 
       const previous = tx
         .select()
         .from(cards)
-        .where(eq(cards.streamId, card.streamId))
+        .where(and(eq(cards.streamId, card.streamId), eq(cards.userId, userId)))
         .orderBy(desc(cards.version))
         .limit(1)
         .all();
@@ -137,7 +163,7 @@ export async function deleteCard(cardId: string) {
       if (previous.length > 0) {
         tx.update(cards)
           .set({ isEditable: true })
-          .where(eq(cards.id, previous[0].id))
+          .where(and(eq(cards.id, previous[0].id), eq(cards.userId, userId)))
           .run();
       }
 
@@ -147,12 +173,14 @@ export async function deleteCard(cardId: string) {
 
   // PostgreSQL: async transaction
   return db.transaction(async (tx: TransactionClient) => {
-    await tx.delete(cards).where(eq(cards.id, cardId));
+    await tx
+      .delete(cards)
+      .where(and(eq(cards.id, cardId), eq(cards.userId, userId)));
 
     const previous = await tx
       .select()
       .from(cards)
-      .where(eq(cards.streamId, card.streamId))
+      .where(and(eq(cards.streamId, card.streamId), eq(cards.userId, userId)))
       .orderBy(desc(cards.version))
       .limit(1);
 
@@ -160,7 +188,7 @@ export async function deleteCard(cardId: string) {
       await tx
         .update(cards)
         .set({ isEditable: true })
-        .where(eq(cards.id, previous[0].id));
+        .where(and(eq(cards.id, previous[0].id), eq(cards.userId, userId)));
     }
 
     return { deleted: true, streamId: card.streamId };

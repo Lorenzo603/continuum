@@ -10,6 +10,7 @@ import {
 
 export const workspaces = pgTable("workspaces", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
   createdAt: text("created_at")
@@ -19,6 +20,7 @@ export const workspaces = pgTable("workspaces", {
 
 export const streams = pgTable("streams", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   workspaceId: text("workspace_id")
     .notNull()
@@ -39,6 +41,7 @@ export const cards = pgTable(
   "cards",
   {
     id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
     streamId: text("stream_id")
       .notNull()
       .references(() => streams.id, { onDelete: "cascade" }),

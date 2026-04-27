@@ -8,6 +8,7 @@ import {
   getSubstreams,
 } from "@/lib/streams";
 import { getCards } from "@/lib/cards";
+import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { updateStreamSchema } from "@/lib/validations";
 
 export async function GET(
@@ -15,16 +16,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
-    const stream = await getStreamById(id);
+    const stream = await getStreamById(id, userId);
 
     if (!stream) {
       return NextResponse.json({ error: "Stream not found" }, { status: 404 });
     }
 
     const [streamCards, substreams] = await Promise.all([
-      getCards(id),
-      getSubstreams(id),
+      getCards(id, userId),
+      getSubstreams(id, userId),
     ]);
 
     return NextResponse.json({ ...stream, cards: streamCards, substreams });
@@ -42,6 +48,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
     const body = await request.json();
     const parsed = updateStreamSchema.safeParse(body);
@@ -55,11 +66,11 @@ export async function PATCH(
 
     let stream;
     if (parsed.data.status === "archived") {
-      stream = await archiveStream(id);
+      stream = await archiveStream(id, userId);
     } else if (parsed.data.status === "active") {
-      stream = await unarchiveStream(id);
+      stream = await unarchiveStream(id, userId);
     } else {
-      stream = await updateStream(id, parsed.data);
+      stream = await updateStream(id, parsed.data, userId);
     }
     if (!stream) {
       return NextResponse.json({ error: "Stream not found" }, { status: 404 });
@@ -80,8 +91,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return unauthorizedJson();
+    }
+
     const { id } = await params;
-    await deleteStream(id);
+    const stream = await getStreamById(id, userId);
+    if (!stream) {
+      return NextResponse.json({ error: "Stream not found" }, { status: 404 });
+    }
+
+    await deleteStream(id, userId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to delete stream:", error);

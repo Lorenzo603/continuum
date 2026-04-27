@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Outfit, DM_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -25,19 +26,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${dmSans.variable}`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("continuum:theme");if(t==="dark"){document.documentElement.classList.add("dark")}}catch(e){}})();`,
-          }}
-        />
-      </head>
-      <body className="antialiased">
-      
-        {children}
-        <Toaster position="bottom-right" richColors />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html
+        lang="en"
+        className={`${outfit.variable} ${dmSans.variable}`}
+        suppressHydrationWarning
+      >
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem("continuum:theme");if(t==="dark"){document.documentElement.classList.add("dark")}}catch(e){}})();`,
+            }}
+          />
+        </head>
+        <body className="antialiased">
+          {children}
+          <Toaster position="bottom-right" richColors />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
