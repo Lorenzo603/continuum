@@ -47,8 +47,12 @@ Default dev uses SQLite (`./continuum.db`). No extra setup needed.
 | `DB_TYPE` | `"sqlite"` or `"postgres"` | `"sqlite"` |
 | `SQLITE_PATH` | Path to SQLite file | `"./continuum.db"` |
 | `DATABASE_URL` | PostgreSQL connection string | — |
+| `NEXT_PUBLIC_ENABLE_CLERK_AUTH` | Build-time auth mode switch (`"true"` Clerk, `"false"` legacy token mode) | `"true"` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (client) | — |
 | `CLERK_SECRET_KEY` | Clerk secret key (server) | — |
+| `ACCESS_TOKEN` | Shared token for legacy auth mode (`NEXT_PUBLIC_ENABLE_CLERK_AUTH=false`) | — |
+| `ACCESS_TOKEN_CHECK_DISABLED` | Skip legacy token checks when set `"true"` | `"false"` |
+| `LEGACY_AUTH_USER_ID` | Tenant user id used in legacy token mode | `"legacy-user"` |
 | `CLERK_MCP_BEARER_TOKEN` | Pre-minted Clerk bearer token for MCP | — |
 | `CLERK_M2M_TOKEN_URL` | OAuth token endpoint for client-credentials flow | — |
 | `CLERK_M2M_CLIENT_ID` | Machine-to-machine client id for MCP | — |

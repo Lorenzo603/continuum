@@ -195,7 +195,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
 
         {isLoaded && (!isSignedIn || authRequired) && (
           <p className="px-3 py-4 text-xs text-muted text-center">
-            Sign in to view your workspaces.
+            Authentication required to view your workspaces.
           </p>
         )}
 

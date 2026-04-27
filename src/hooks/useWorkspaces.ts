@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { CLERK_AUTH_ENABLED } from "@/lib/authMode";
 
 export function useWorkspaces() {
-  const { isLoaded, isSignedIn } = useAuth();
   const {
     workspaces,
     activeWorkspaceId,
@@ -19,19 +18,18 @@ export function useWorkspaces() {
   } = useWorkspaceStore();
 
   useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
-
-    if (!isSignedIn) {
-      resetForSignedOut();
-      return;
-    }
-
     fetchWorkspaces();
-  }, [isLoaded, isSignedIn, fetchWorkspaces, resetForSignedOut]);
+  }, [fetchWorkspaces]);
+
+  useEffect(() => {
+    if (CLERK_AUTH_ENABLED && authRequired) {
+      resetForSignedOut();
+    }
+  }, [authRequired, resetForSignedOut]);
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? null;
+  const isLoaded = true;
+  const isSignedIn = CLERK_AUTH_ENABLED ? !authRequired : true;
 
   return {
     workspaces,

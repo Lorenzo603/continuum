@@ -1,13 +1,11 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
 import { AuthControls } from "@/components/AuthControls";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 
 export default function Home() {
-  const { isLoaded, isSignedIn } = useAuth();
   const {
     workspaces,
     loading,
@@ -42,11 +40,9 @@ export default function Home() {
               Select a workspace to open its board. Workspace boards are available at the URL pattern /workspace/&lt;id&gt;.
             </p>
 
-            {!isLoaded ? (
-              <p className="mt-6 text-sm text-muted">Checking session...</p>
-            ) : !isSignedIn || authRequired ? (
+            {authRequired ? (
               <div className="mt-6 rounded-lg border border-border/50 bg-card/40 p-4">
-                <p className="text-sm text-muted">Sign in to view your workspaces.</p>
+                <p className="text-sm text-muted">Authentication required to view your workspaces.</p>
                 <div className="mt-3">
                   <AuthControls />
                 </div>

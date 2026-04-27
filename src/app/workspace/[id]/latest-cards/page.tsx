@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { LatestCardTile } from "@/components/LatestCardTile";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
 import { WorkspaceViewNav } from "@/components/WorkspaceViewNav";
 import { AuthControls } from "@/components/AuthControls";
+import { getAuthUserId } from "@/lib/auth";
 import { getLatestCardsByWorkspace } from "@/lib/latestCards";
 import { workspaceIdParamSchema } from "@/lib/validations";
 import { getWorkspaceById } from "@/lib/workspaces";
@@ -13,7 +13,7 @@ interface LatestCardsPageProps {
 }
 
 export default async function LatestCardsPage({ params }: LatestCardsPageProps) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) {
     notFound();
   }

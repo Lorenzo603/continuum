@@ -1,12 +1,21 @@
 "use client";
 
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
+import { CLERK_AUTH_ENABLED } from "@/lib/authMode";
 
 interface AuthControlsProps {
   className?: string;
 }
 
 export function AuthControls({ className }: AuthControlsProps) {
+  if (!CLERK_AUTH_ENABLED) {
+    return null;
+  }
+
+  return <ClerkAuthControls className={className} />;
+}
+
+function ClerkAuthControls({ className }: AuthControlsProps) {
   const { isLoaded, isSignedIn } = useAuth();
 
   return (

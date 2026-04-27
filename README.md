@@ -22,9 +22,17 @@ npm install
 # Configure environment
 # Create .env.local manually
 
+# Auth mode switch (build-time)
+# NEXT_PUBLIC_ENABLE_CLERK_AUTH=true
+
 # Required Clerk variables
 # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 # CLERK_SECRET_KEY=sk_test_...
+
+# Legacy token mode variables (if NEXT_PUBLIC_ENABLE_CLERK_AUTH=false)
+# ACCESS_TOKEN=...
+# ACCESS_TOKEN_CHECK_DISABLED=false
+# LEGACY_AUTH_USER_ID=legacy-user
 
 # Push database schema
 npm run db:push
@@ -38,9 +46,14 @@ npm run dev
 
 Open [http://localhost:4000](http://localhost:4000).
 
-## Authentication (Clerk)
+## Authentication
 
-Continuum uses Clerk as the primary auth layer.
+Continuum supports two auth modes selected at build time with `NEXT_PUBLIC_ENABLE_CLERK_AUTH`.
+
+- `true` (default): Clerk auth mode
+- `false`: legacy `ACCESS_TOKEN` header mode
+
+### Clerk mode (`NEXT_PUBLIC_ENABLE_CLERK_AUTH=true`)
 
 Required environment variables:
 
@@ -59,6 +72,20 @@ The app exposes Clerk routes at:
 
 - `/sign-in`
 - `/sign-up`
+
+### Legacy token mode (`NEXT_PUBLIC_ENABLE_CLERK_AUTH=false`)
+
+Set:
+
+```bash
+ACCESS_TOKEN=your-shared-token
+ACCESS_TOKEN_CHECK_DISABLED=false
+LEGACY_AUTH_USER_ID=legacy-user
+```
+
+- Requests must send either `Authorization: Bearer <token>` or `X-Access-Token: <token>`.
+- API and page protection follows the previous shared-token middleware flow.
+- Data operations run under `LEGACY_AUTH_USER_ID` for tenancy filtering.
 
 ## MCP Server (for VS Code Agents)
 
@@ -81,6 +108,7 @@ This repo includes a local MCP server that exposes Continuum operations over std
 
 ```bash
 # Required for protected API calls from MCP:
+# If NEXT_PUBLIC_ENABLE_CLERK_AUTH=true:
 # Option A: provide a pre-minted Clerk bearer token
 # CLERK_MCP_BEARER_TOKEN=<clerk-jwt>
 #
@@ -90,6 +118,9 @@ This repo includes a local MCP server that exposes Continuum operations over std
 # CLERK_M2M_CLIENT_SECRET=...
 # CLERK_M2M_AUDIENCE=...   # optional
 # CLERK_M2M_SCOPE=...      # optional
+#
+# If NEXT_PUBLIC_ENABLE_CLERK_AUTH=false:
+# ACCESS_TOKEN=<same token expected by middleware>
 
 npm run mcp:server
 ```

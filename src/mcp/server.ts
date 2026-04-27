@@ -8,6 +8,8 @@ import { CARD_STATUSES, type CardStatus } from "@/types";
 
 const statusValues = CARD_STATUSES.map((status) => status.value) as [CardStatus, ...CardStatus[]];
 const apiBaseUrl = process.env.CONTINUUM_API_BASE_URL ?? "http://localhost:3000";
+const clerkAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_CLERK_AUTH !== "false";
+const legacyAccessToken = process.env.ACCESS_TOKEN?.trim() ?? "";
 const clerkStaticBearerToken = process.env.CLERK_MCP_BEARER_TOKEN?.trim() ?? "";
 const clerkM2MTokenUrl = process.env.CLERK_M2M_TOKEN_URL?.trim() ?? "";
 const clerkM2MClientId = process.env.CLERK_M2M_CLIENT_ID?.trim() ?? "";
@@ -142,21 +144,34 @@ function parseErrorPayload(payload: unknown) {
 
 async function apiRequest<T>(pathname: string, options: ApiRequestOptions = {}): Promise<ApiResponse<T>> {
   try {
-    const machineToken = await getMachineAccessToken();
-    if (!machineToken) {
+    const headers: Record<string, string> = {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+    };
+
+    if (clerkAuthEnabled) {
+      const machineToken = await getMachineAccessToken();
+      if (!machineToken) {
+        return {
+          ok: false,
+          status: 401,
+          message: "Missing Clerk machine authentication configuration",
+        };
+      }
+
+      headers.Authorization = `Bearer ${machineToken}`;
+    } else if (legacyAccessToken) {
+      headers["X-Access-Token"] = legacyAccessToken;
+    } else {
       return {
         ok: false,
         status: 401,
-        message: "Missing Clerk machine authentication configuration",
+        message: "Missing ACCESS_TOKEN for legacy token authentication mode",
       };
     }
 
     const response = await fetch(buildApiUrl(pathname, options.query), {
       method: options.method ?? "GET",
-      headers: {
-        Authorization: `Bearer ${machineToken}`,
-        ...(options.body ? { "Content-Type": "application/json" } : {}),
-      },
+      headers,
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Outfit, DM_Sans } from "next/font/google";
 import { Toaster } from "sonner";
+import { CLERK_AUTH_ENABLED } from "@/lib/authMode";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -25,25 +26,33 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = (
+    <html
+      lang="en"
+      className={`${outfit.variable} ${dmSans.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("continuum:theme");if(t==="dark"){document.documentElement.classList.add("dark")}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="antialiased">
+        {children}
+        <Toaster position="bottom-right" richColors />
+      </body>
+    </html>
+  );
+
+  if (!CLERK_AUTH_ENABLED) {
+    return content;
+  }
+
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        className={`${outfit.variable} ${dmSans.variable}`}
-        suppressHydrationWarning
-      >
-        <head>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `(function(){try{var t=localStorage.getItem("continuum:theme");if(t==="dark"){document.documentElement.classList.add("dark")}}catch(e){}})();`,
-            }}
-          />
-        </head>
-        <body className="antialiased">
-          {children}
-          <Toaster position="bottom-right" richColors />
-        </body>
-      </html>
+      {content}
     </ClerkProvider>
   );
 }

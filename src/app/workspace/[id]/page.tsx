@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
 import { StreamBoard } from "@/components/StreamBoard";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
 import { AuthControls } from "@/components/AuthControls";
+import { getAuthUserId } from "@/lib/auth";
 import { getWorkspaceById } from "@/lib/workspaces";
 import { workspaceIdParamSchema } from "@/lib/validations";
 
@@ -11,7 +11,7 @@ interface WorkspacePageProps {
 }
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
-  const { userId } = await auth();
+  const userId = await getAuthUserId();
   if (!userId) {
     notFound();
   }
