@@ -1,6 +1,6 @@
 # Build args shared across stages
-ARG NEXT_PUBLIC_ENABLE_CLERK_AUTH=false
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
+ARG NEXT_PUBLIC_ENABLE_CLERK_AUTH=true
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_Y2xlcmsuY29udGludXVtLmxvcmVuem9mdXJyZXIuY29tJA"
 
 # Stage 1: Install dependencies
 FROM node:25-alpine AS deps
