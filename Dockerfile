@@ -1,5 +1,5 @@
 # Build args shared across stages
-ARG NEXT_PUBLIC_ENABLE_CLERK_AUTH=true
+ARG NEXT_PUBLIC_ENABLE_CLERK_AUTH=false
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_Y2xlcmsuY29udGludXVtLmxvcmVuem9mdXJyZXIuY29tJA"
 ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL="https://continuum.lorenzofurrer.com/sign-in"
 ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL="https://continuum.lorenzofurrer.com/sign-up"
