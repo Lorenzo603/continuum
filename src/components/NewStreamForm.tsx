@@ -7,10 +7,16 @@ import { toast } from "sonner";
 interface NewStreamFormProps {
   parentStreamId: string | null;
   workspaceId: string;
+  insertAtStart?: boolean;
   onCancel: () => void;
 }
 
-export function NewStreamForm({ parentStreamId, workspaceId, onCancel }: NewStreamFormProps) {
+export function NewStreamForm({
+  parentStreamId,
+  workspaceId,
+  insertAtStart = false,
+  onCancel,
+}: NewStreamFormProps) {
   const [title, setTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const { addStream } = useStreamStore();
@@ -21,7 +27,7 @@ export function NewStreamForm({ parentStreamId, workspaceId, onCancel }: NewStre
 
     setSaving(true);
     try {
-      await addStream(title.trim(), workspaceId, parentStreamId);
+      await addStream(title.trim(), workspaceId, parentStreamId, insertAtStart);
       toast.success(
         parentStreamId ? "Substream created" : "Stream created"
       );

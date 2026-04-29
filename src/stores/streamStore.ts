@@ -12,7 +12,12 @@ interface StreamState {
 
   fetchStreams: (workspaceId: string) => Promise<void>;
   resetForSignedOut: () => void;
-  addStream: (title: string, workspaceId: string, parentStreamId?: string | null) => Promise<void>;
+  addStream: (
+    title: string,
+    workspaceId: string,
+    parentStreamId?: string | null,
+    insertAtStart?: boolean,
+  ) => Promise<void>;
   updateStream: (
     id: string,
     data: { title?: string; orderIndex?: number }
@@ -81,13 +86,13 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     });
   },
 
-  addStream: async (title, workspaceId, parentStreamId = null) => {
+  addStream: async (title, workspaceId, parentStreamId = null, insertAtStart = false) => {
     const prev = get().streams;
     try {
       const res = await fetch("/api/streams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, workspaceId, parentStreamId }),
+        body: JSON.stringify({ title, workspaceId, parentStreamId, insertAtStart }),
       });
       if (res.status === 401 || res.status === 403) {
         set({ error: "Authentication required", authRequired: true });

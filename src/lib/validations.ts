@@ -25,6 +25,7 @@ export const createStreamSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   workspaceId: z.string().uuid(),
   parentStreamId: z.string().uuid().nullable().optional(),
+  insertAtStart: z.boolean().optional(),
 });
 
 export const updateStreamSchema = z.object({

@@ -72,6 +72,7 @@ export interface CreateStreamInput {
   title: string;
   workspaceId: string;
   parentStreamId?: string | null;
+  insertAtStart?: boolean;
 }
 
 export interface UpdateStreamInput {

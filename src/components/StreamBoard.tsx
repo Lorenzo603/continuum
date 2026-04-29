@@ -44,6 +44,7 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
   const settingsLoaded = useSettingsStore((s) => s.loaded);
   const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived, statusFilters, cardsByStream);
+  const [isCreatingTopStream, setIsCreatingTopStream] = useState(false);
 
   // Fetch settings once on mount
   useEffect(() => { if (!settingsLoaded) fetchSettings(); }, [settingsLoaded, fetchSettings]);
@@ -112,8 +113,44 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
       <div className="pb-4">
         <WorkspaceViewNav workspaceId={workspaceId} />
         <StreamSearchBar />
-        <span className="text-xs text-muted font-medium">{filteredStreams.length} {filteredStreams.length === 1 ? 'stream' : 'streams'}{isFiltering ? ' found' : ''}</span>
+        <div className="mt-2">
+          <span className="text-xs text-muted font-medium">{filteredStreams.length} {filteredStreams.length === 1 ? 'stream' : 'streams'}{isFiltering ? ' found' : ''}</span>
+        </div>
       </div>
+      {!isCreatingTopStream && (
+        <button
+          onClick={() => {
+            setCreatingStream(false);
+            setIsCreatingTopStream(true);
+          }}
+          className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-4 py-3 text-sm text-muted transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          New Stream
+        </button>
+      )}
+      {isCreatingTopStream && (
+        <div className="mt-3">
+          <NewStreamForm
+            onCancel={() => setIsCreatingTopStream(false)}
+            parentStreamId={null}
+            workspaceId={workspaceId}
+            insertAtStart
+          />
+        </div>
+      )}
       {filteredStreams.length === 0 ? (
         <div className="flex items-center justify-center py-16">
           <p className="text-muted text-sm">No streams match your search.</p>
@@ -150,7 +187,10 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
         />
       ) : (
         <button
-          onClick={() => setCreatingStream(true)}
+          onClick={() => {
+            setIsCreatingTopStream(false);
+            setCreatingStream(true);
+          }}
           className="mt-4 flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-4 py-3 text-sm text-muted transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
         >
           <svg

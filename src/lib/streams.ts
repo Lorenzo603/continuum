@@ -1,5 +1,5 @@
 import { db, streams, workspaces } from "@/db";
-import { and, asc, desc, eq, inArray, isNull, max } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, max, sql } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 import type { Stream, StreamNode } from "@/types";
 
@@ -133,6 +133,7 @@ export async function createStream(data: {
   title: string;
   workspaceId: string;
   parentStreamId?: string | null;
+  insertAtStart?: boolean;
 }, userId: string) {
   const ownedWorkspace = await db
     .select({ id: workspaces.id })
@@ -157,11 +158,36 @@ export async function createStream(data: {
   }
 
   const id = uuid();
-  const orderIndex = await getNextOrderIndex(
-    data.workspaceId,
-    data.parentStreamId ?? null,
-    userId,
-  );
+  const resolvedParentStreamId = data.parentStreamId ?? null;
+
+  let orderIndex: number;
+  if (data.insertAtStart) {
+    const parentCondition = resolvedParentStreamId
+      ? eq(streams.parentStreamId, resolvedParentStreamId)
+      : isNull(streams.parentStreamId);
+
+    await db
+      .update(streams)
+      .set({
+        orderIndex: sql`${streams.orderIndex} + 1`,
+      })
+      .where(
+        and(
+          eq(streams.userId, userId),
+          eq(streams.workspaceId, data.workspaceId),
+          parentCondition,
+          eq(streams.status, "active"),
+        ),
+      );
+
+    orderIndex = 0;
+  } else {
+    orderIndex = await getNextOrderIndex(
+      data.workspaceId,
+      resolvedParentStreamId,
+      userId,
+    );
+  }
 
   const result = db
     .insert(streams)
@@ -170,7 +196,7 @@ export async function createStream(data: {
       userId,
       title: data.title,
       workspaceId: data.workspaceId,
-      parentStreamId: data.parentStreamId ?? null,
+      parentStreamId: resolvedParentStreamId,
       orderIndex,
     })
     .returning();
