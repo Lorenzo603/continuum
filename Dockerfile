@@ -46,7 +46,7 @@ ENV NEXT_PUBLIC_ENABLE_CLERK_AUTH=$NEXT_PUBLIC_ENABLE_CLERK_AUTH
 # Set via runtime environment/secret manager in production.
 ENV CLERK_SECRET_KEY=""
 ENV ACCESS_TOKEN_CHECK_DISABLED="false"
-ENV LEGACY_AUTH_USER_ID="user_3Cx5k1b3dZXiLgfSWixEcCSx0X0"
+ENV LEGACY_AUTH_USER_ID="user_3D36THsj4Paosmf3DCk9r1huw9H"
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
