@@ -4,8 +4,10 @@ import {
 } from "@clerk/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { CLERK_AUTH_ENABLED } from "@/lib/authMode";
+import { CLERK_SIGN_IN_URL } from "@/lib/clerkUrls";
 
 const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
+const isApiRoute = createRouteMatcher(["/api(.*)"]);
 
 function getProvidedToken(request: NextRequest): string | null {
   const authHeader = request.headers.get("authorization");
@@ -63,8 +65,19 @@ function legacyTokenProxy(request: NextRequest) {
 }
 
 const clerkProxy = clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
+  if (isPublicRoute(request)) {
+    return;
+  }
+
+  if (isApiRoute(request)) {
     await auth.protect();
+    return;
+  }
+
+  const { userId } = await auth();
+  if (!userId) {
+    // Use a fixed sign-in target to avoid host-derived redirect_url values.
+    return NextResponse.redirect(new URL(CLERK_SIGN_IN_URL, request.url));
   }
 });
 
