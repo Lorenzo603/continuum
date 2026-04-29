@@ -2,7 +2,6 @@
 
 import { SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/nextjs";
 import { CLERK_AUTH_ENABLED } from "@/lib/authMode";
-import { CLERK_FORCE_REDIRECT_URL } from "@/lib/clerkUrls";
 
 interface AuthControlsProps {
   className?: string;
@@ -25,12 +24,12 @@ function ClerkAuthControls({ className }: AuthControlsProps) {
         <UserButton />
       ) : isLoaded ? (
         <div className="flex items-center gap-2">
-          <SignInButton mode="redirect" forceRedirectUrl={CLERK_FORCE_REDIRECT_URL}>
+          <SignInButton mode="redirect" forceRedirectUrl="/">
             <button className="rounded-md border border-border/60 bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-card-hover">
               Sign in
             </button>
           </SignInButton>
-          <SignUpButton mode="redirect" forceRedirectUrl={CLERK_FORCE_REDIRECT_URL}>
+          <SignUpButton mode="redirect" forceRedirectUrl="/">
             <button className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-hover">
               Sign up
             </button>
