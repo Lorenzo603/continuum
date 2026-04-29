@@ -3,6 +3,7 @@
 import { memo, useState, useRef, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useCardStore } from "@/stores/cardStore";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { toast } from "sonner";
 import type { Card, CardStatus } from "@/types";
 import { CARD_STATUSES } from "@/types";
@@ -33,7 +34,9 @@ export const CardItem = memo(function CardItem({
 
   const updateCard = useCardStore((s) => s.updateCard);
   const isOverflowing = card.content.length > 132;
-  const displayContent = isOverflowing ? card.content.slice(0, 132) + "…" : card.content;
+  const previewContent = isOverflowing
+    ? card.content.slice(0, 132) + "…"
+    : card.content;
 
   const handleDelete = async () => {
     try {
@@ -192,7 +195,7 @@ export const CardItem = memo(function CardItem({
         </div>
 
         {/* Content */}
-        <p className="text-sm leading-relaxed">{displayContent}</p>
+        <MarkdownRenderer content={previewContent} />
         {isOverflowing && onViewAll && (
           <button
             onClick={onViewAll}
