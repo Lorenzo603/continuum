@@ -69,13 +69,20 @@ export const cards = pgTable(
   ],
 );
 
-export const settings = pgTable("settings", {
-  id: text("id").primaryKey(),
-  prepopulateCardContent: boolean("prepopulate_card_content").notNull().default(true),
-  createdAt: text("created_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
-  updatedAt: text("updated_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
-});
+export const settings = pgTable(
+  "settings",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    prepopulateCardContent: boolean("prepopulate_card_content")
+      .notNull()
+      .default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => [uniqueIndex("settings_user_id_idx").on(table.userId)],
+);

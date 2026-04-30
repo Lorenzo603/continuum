@@ -53,13 +53,22 @@ export const cards = sqliteTable(
   ]
 );
 
-export const settings = sqliteTable("settings", {
-  id: text("id").primaryKey(),
-  prepopulateCardContent: integer("prepopulate_card_content", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
-  updatedAt: text("updated_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
-});
+export const settings = sqliteTable(
+  "settings",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    prepopulateCardContent: integer("prepopulate_card_content", {
+      mode: "boolean",
+    })
+      .notNull()
+      .default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text("updated_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => [uniqueIndex("settings_user_id_idx").on(table.userId)],
+);

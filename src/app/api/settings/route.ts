@@ -10,7 +10,7 @@ export async function GET() {
       return unauthorizedJson();
     }
 
-    const row = await getSettings();
+    const row = await getSettings(userId);
     return NextResponse.json(row);
   } catch (error) {
     console.error("Failed to fetch settings:", error);
@@ -38,7 +38,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const updated = await updateSettings(parsed.data);
+    const updated = await updateSettings(userId, parsed.data);
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Failed to update settings:", error);

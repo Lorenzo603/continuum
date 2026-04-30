@@ -94,6 +94,7 @@ export interface UpdateCardInput {
 
 export interface Settings {
   id: string;
+  userId: string;
   prepopulateCardContent: boolean;
   createdAt: string;
   updatedAt: string;
