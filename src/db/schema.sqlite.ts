@@ -5,6 +5,7 @@ export const workspaces = sqliteTable("workspaces", {
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
+  orderIndex: integer("order_index").notNull().default(0),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

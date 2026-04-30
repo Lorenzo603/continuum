@@ -38,6 +38,10 @@ export const reorderStreamsSchema = z.object({
   orderedIds: z.array(z.string().uuid()).min(1),
 });
 
+export const reorderWorkspacesSchema = z.object({
+  orderedIds: z.array(z.string().uuid()).min(1),
+});
+
 export const createCardSchema = z.object({
   streamId: z.string().uuid(),
   content: z.string().min(1, "Content is required"),

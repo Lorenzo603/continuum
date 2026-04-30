@@ -15,6 +15,7 @@ export function useWorkspaces() {
     addWorkspace,
     updateWorkspace,
     deleteWorkspace,
+    reorderWorkspaces,
   } = useWorkspaceStore();
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function useWorkspaces() {
     addWorkspace,
     updateWorkspace,
     deleteWorkspace,
+    reorderWorkspaces,
     refetch: fetchWorkspaces,
   };
 }

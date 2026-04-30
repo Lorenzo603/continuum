@@ -5,6 +5,7 @@ export interface Workspace {
   userId: string;
   name: string;
   description: string | null;
+  orderIndex: number;
   createdAt: string;
 }
 
@@ -66,6 +67,7 @@ export interface CreateWorkspaceInput {
 export interface UpdateWorkspaceInput {
   name?: string;
   description?: string | null;
+  orderIndex?: number;
 }
 
 export interface CreateStreamInput {

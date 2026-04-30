@@ -19,6 +19,7 @@ interface WorkspaceState {
     data: { name?: string; description?: string | null }
   ) => Promise<void>;
   deleteWorkspace: (id: string) => Promise<void>;
+  reorderWorkspaces: (orderedIds: string[]) => Promise<void>;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -183,6 +184,45 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         workspaces: prev,
         error:
           error instanceof Error ? error.message : "Failed to delete workspace",
+      });
+    }
+  },
+
+  reorderWorkspaces: async (orderedIds) => {
+    const prev = get().workspaces;
+    const workspaceMap = new Map(prev.map((workspace) => [workspace.id, workspace]));
+    const orderedSet = new Set(orderedIds);
+
+    const reordered = [
+      ...orderedIds
+        .map((id) => workspaceMap.get(id))
+        .filter((workspace): workspace is Workspace => workspace !== undefined),
+      ...prev.filter((workspace) => !orderedSet.has(workspace.id)),
+    ].map((workspace, index) => ({ ...workspace, orderIndex: index }));
+
+    set({ workspaces: reordered });
+
+    try {
+      const res = await fetch("/api/workspaces/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        set({
+          workspaces: prev,
+          error: "Authentication required",
+          authRequired: true,
+        });
+        return;
+      }
+
+      if (!res.ok) throw new Error("Failed to reorder workspaces");
+    } catch (error) {
+      set({
+        workspaces: prev,
+        error: error instanceof Error ? error.message : "Failed to reorder workspaces",
       });
     }
   },

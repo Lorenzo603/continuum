@@ -27,6 +27,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
     addWorkspace,
     updateWorkspace,
     deleteWorkspace,
+    reorderWorkspaces,
   } = useWorkspaces();
 
   const [isCreating, setIsCreating] = useState(false);
@@ -128,6 +129,28 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
     setEditingName(name);
   };
 
+  const handleMoveWorkspace = async (workspaceId: string, direction: "up" | "down") => {
+    if (actionsDisabled) {
+      return;
+    }
+
+    const fromIndex = workspaces.findIndex((workspace) => workspace.id === workspaceId);
+    if (fromIndex === -1) {
+      return;
+    }
+
+    const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= workspaces.length) {
+      return;
+    }
+
+    const orderedIds = workspaces.map((workspace) => workspace.id);
+    const [movedId] = orderedIds.splice(fromIndex, 1);
+    orderedIds.splice(toIndex, 0, movedId);
+
+    await reorderWorkspaces(orderedIds);
+  };
+
   const cancelRename = () => {
     setEditingWorkspaceId(null);
     setEditingName("");
@@ -210,7 +233,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
           </div>
         )}
 
-        {isLoaded && isSignedIn && !authRequired && workspaces.map((ws) => {
+        {isLoaded && isSignedIn && !authRequired && workspaces.map((ws, index) => {
           const isEditing = editingWorkspaceId === ws.id;
           return (
             <div
@@ -288,6 +311,36 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
               ) : (
                 <>
                   <span className="flex-1 truncate">{ws.name}</span>
+                  {workspaces.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleMoveWorkspace(ws.id, "up");
+                        }}
+                        disabled={index === 0 || actionsDisabled}
+                        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                        title="Move workspace up"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleMoveWorkspace(ws.id, "down");
+                        }}
+                        disabled={index === workspaces.length - 1 || actionsDisabled}
+                        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                        title="Move workspace down"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
