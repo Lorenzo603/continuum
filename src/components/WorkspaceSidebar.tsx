@@ -12,6 +12,8 @@ interface WorkspaceSidebarProps {
   currentWorkspaceId?: string | null;
 }
 
+const SIDEBAR_COLLAPSED_KEY = "continuum:sidebar-collapsed";
+
 export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -37,6 +39,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   const [editingName, setEditingName] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { theme, toggleTheme } = useThemeStore();
   const selectedWorkspaceId = currentWorkspaceId ?? activeWorkspaceId;
   const exportWorkspaceId = currentWorkspaceId;
@@ -51,6 +54,50 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
       setActiveWorkspace(currentWorkspaceId);
     }
   }, [activeWorkspaceId, currentWorkspaceId, setActiveWorkspace]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (saved === "true" || saved === "false") {
+        setIsCollapsed(saved === "true");
+      }
+    } catch {
+      // Ignore localStorage read errors.
+    }
+  }, []);
+
+  const setSidebarCollapsed = (collapsed: boolean) => {
+    setIsCollapsed(collapsed);
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+    } catch {
+      // Ignore localStorage write errors.
+    }
+  };
+
+  const toggleSidebarCollapsed = () => {
+    const next = !isCollapsed;
+    setSidebarCollapsed(next);
+
+    if (next) {
+      setIsCreating(false);
+      setNewName("");
+      setEditingWorkspaceId(null);
+      setEditingName("");
+    }
+  };
+
+  const handleStartCreating = () => {
+    if (actionsDisabled) {
+      return;
+    }
+
+    if (isCollapsed) {
+      setSidebarCollapsed(false);
+    }
+
+    setIsCreating(true);
+  };
 
   const navigateToWorkspace = (workspaceId: string) => {
     if (actionsDisabled) {
@@ -180,36 +227,61 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   };
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 flex-shrink-0 flex-col border-r border-border/50 bg-surface/50">
+    <aside
+      className={`sticky top-0 flex h-screen flex-shrink-0 flex-col overflow-hidden border-r border-border/50 bg-surface/50 transition-[width] duration-300 ${
+        isCollapsed ? "w-16" : "w-72"
+      }`}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">
-          Workspaces
-        </h2>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="rounded p-1 text-muted transition-colors hover:text-primary hover:bg-primary/10 cursor-pointer disabled:pointer-events-none disabled:opacity-50"
-          title="New workspace"
-          disabled={actionsDisabled}
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+      <div className={`flex items-center border-b border-border/50 py-3 ${isCollapsed ? "justify-center px-2" : "justify-between px-4"}`}>
+        {!isCollapsed && (
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">
+            Workspaces
+          </h2>
+        )}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleSidebarCollapsed}
+            className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-primary/10 hover:text-primary"
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-        </button>
+            {isCollapsed ? (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            )}
+          </button>
+          <button
+            onClick={handleStartCreating}
+            className="cursor-pointer rounded p-1 text-muted transition-colors hover:bg-primary/10 hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+            title="New workspace"
+            disabled={actionsDisabled}
+            aria-label="New workspace"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Workspace list */}
-      <nav className="flex-1 overflow-y-auto px-2 py-2">
+      <nav className={`flex-1 overflow-y-auto py-2 ${isCollapsed ? "px-1.5" : "px-2"}`}>
         {!isLoaded && (
           <p className="px-3 py-4 text-xs text-muted text-center">
             Checking session...
@@ -240,6 +312,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
               key={ws.id}
               role="button"
               tabIndex={isEditing ? -1 : 0}
+              title={isCollapsed ? ws.name : undefined}
               onClick={() => {
                 if (!isEditing) navigateToWorkspace(ws.id);
               }}
@@ -249,11 +322,11 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
                   navigateToWorkspace(ws.id);
                 }
               }}
-              className={`group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mb-0.5 ${
+              className={`group mb-0.5 flex w-full items-center rounded-lg text-left text-sm transition-all ${
                 ws.id === selectedWorkspaceId
                   ? "bg-card text-foreground font-medium"
                   : "text-foreground/70 hover:bg-card-hover hover:text-foreground"
-              } ${isEditing ? "cursor-default" : "cursor-pointer"}`}
+              } ${isEditing ? "cursor-default" : "cursor-pointer"} ${isCollapsed ? "justify-center px-2 py-2.5" : "gap-2.5 px-3 py-2"}`}
             >
               <div
                 className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${
@@ -310,73 +383,76 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
                 </form>
               ) : (
                 <>
-                  <span className="flex-1 truncate">{ws.name}</span>
-                  {workspaces.length > 1 && (
-                    <>
+                    {!isCollapsed && <span className="flex-1 truncate">{ws.name}</span>}
+                    {isCollapsed && <span className="sr-only">{ws.name}</span>}
+                    {!isCollapsed && workspaces.length > 1 && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleMoveWorkspace(ws.id, "up");
+                          }}
+                          disabled={index === 0 || actionsDisabled}
+                          className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                          title="Move workspace up"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleMoveWorkspace(ws.id, "down");
+                          }}
+                          disabled={index === workspaces.length - 1 || actionsDisabled}
+                          className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
+                          title="Move workspace down"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                    {!isCollapsed && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          void handleMoveWorkspace(ws.id, "up");
+                          startRename(ws.id, ws.name);
                         }}
-                        disabled={index === 0 || actionsDisabled}
-                        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-                        title="Move workspace up"
+                        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100"
+                        title="Rename workspace"
                       >
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.586-9.414a2 2 0 112.828 2.828L12 14l-4 1 1-4 8.414-8.414z" />
                         </svg>
                       </button>
+                    )}
+                    {!isCollapsed && workspaces.length > 1 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          void handleMoveWorkspace(ws.id, "down");
+                          handleDelete(ws.id, ws.name);
                         }}
-                        disabled={index === workspaces.length - 1 || actionsDisabled}
-                        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
-                        title="Move workspace down"
+                        className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-danger group-hover:opacity-100"
+                        title="Delete workspace"
                       >
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
                         </svg>
                       </button>
-                    </>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startRename(ws.id, ws.name);
-                    }}
-                    className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-primary group-hover:opacity-100"
-                    title="Rename workspace"
-                  >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.586-9.414a2 2 0 112.828 2.828L12 14l-4 1 1-4 8.414-8.414z" />
-                    </svg>
-                  </button>
-                  {workspaces.length > 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(ws.id, ws.name);
-                      }}
-                      className="cursor-pointer rounded p-0.5 text-muted opacity-0 transition-all hover:text-danger group-hover:opacity-100"
-                      title="Delete workspace"
-                    >
-                      <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  )}
+                    )}
                 </>
               )}
             </div>
@@ -384,14 +460,14 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
         })}
 
         {isLoaded && isSignedIn && !authRequired && workspaces.length === 0 && !loading && (
-          <p className="px-3 py-4 text-xs text-muted text-center">
-            No workspaces yet. Create one to get started.
+          <p className="px-3 py-4 text-center text-xs text-muted">
+            {isCollapsed ? "No workspaces" : "No workspaces yet. Create one to get started."}
           </p>
         )}
       </nav>
 
       {/* Create workspace inline form */}
-      {isCreating && !actionsDisabled && (
+      {isCreating && !actionsDisabled && !isCollapsed && (
         <div className="border-t border-border/50 px-3 py-3">
           <form onSubmit={handleCreate} className="flex flex-col gap-2">
             <input
@@ -434,25 +510,33 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
 
       {/* Settings */}
       <div className="mt-auto border-t border-border/50 px-3 py-3">
-        <h2 className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-muted">
-          Settings
-        </h2>
+        {!isCollapsed && (
+          <h2 className="mb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-muted">
+            Settings
+          </h2>
+        )}
         <button
           onClick={() => router.push("/settings")}
-          className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground"
+          className={`flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground ${
+            isCollapsed ? "justify-center" : "gap-2.5"
+          }`}
           title="Open settings"
+          aria-label="Open settings"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span>Settings</span>
+          {!isCollapsed && <span>Settings</span>}
         </button>
         <button
           onClick={handleExport}
           disabled={exporting || !exportWorkspaceId}
-          className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+          className={`flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground disabled:pointer-events-none disabled:opacity-50 ${
+            isCollapsed ? "justify-center" : "gap-2.5"
+          }`}
           title="Export workspace to JSON"
+          aria-label="Export workspace to JSON"
         >
           {exporting ? (
             <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -464,19 +548,24 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
             </svg>
           )}
-          <span>{exporting ? "Exporting…" : "Export Workspace"}</span>
+          {!isCollapsed && <span>{exporting ? "Exporting…" : "Export Workspace"}</span>}
         </button>
       </div>
 
       {/* Theme toggle */}
       <div className="border-t border-border/50 px-3 py-3">
-        <div className="mb-2 px-3">
-          <AuthControls />
-        </div>
+        {!isCollapsed && (
+          <div className="mb-2 px-3">
+            <AuthControls />
+          </div>
+        )}
         <button
           onClick={toggleTheme}
-          className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground"
+          className={`flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-card hover:text-foreground ${
+            isCollapsed ? "justify-center" : "gap-2.5"
+          }`}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
           {theme === "dark" ? (
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -487,7 +576,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
               <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.005 9.005 0 0012 21a9.005 9.005 0 008.354-5.646z" />
             </svg>
           )}
-          <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+          {!isCollapsed && <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>}
         </button>
       </div>
     </aside>
