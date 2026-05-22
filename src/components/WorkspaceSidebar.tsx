@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { AuthControls } from "@/components/AuthControls";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { useThemeStore, hydrateTheme } from "@/stores/themeStore";
 import { exportWorkspaceToJson } from "@/lib/exportWorkspace";
 import { toast } from "sonner";
@@ -40,6 +41,8 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   const [renaming, setRenaming] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deletingWorkspace, setDeletingWorkspace] = useState(false);
   const { theme, toggleTheme } = useThemeStore();
   const selectedWorkspaceId = currentWorkspaceId ?? activeWorkspaceId;
   const exportWorkspaceId = currentWorkspaceId;
@@ -148,27 +151,47 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = (id: string, name: string) => {
     if (actionsDisabled) {
       return;
     }
 
-    if (!confirm(`Delete workspace "${name}"? All streams and cards in it will be permanently deleted.`)) {
+    setWorkspaceToDelete({ id, name });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!workspaceToDelete || actionsDisabled || deletingWorkspace) {
       return;
     }
 
+    setDeletingWorkspace(true);
+    const { id } = workspaceToDelete;
     const remainingWorkspaceId = workspaces.find((ws) => ws.id !== id)?.id ?? null;
-    await deleteWorkspace(id);
-    toast.success("Workspace deleted");
 
-    if (currentWorkspaceId === id) {
-      if (remainingWorkspaceId) {
-        navigateToWorkspace(remainingWorkspaceId);
-      } else {
-        setActiveWorkspace(null);
-        router.push("/");
+    try {
+      await deleteWorkspace(id);
+      toast.success("Workspace deleted");
+
+      if (currentWorkspaceId === id) {
+        if (remainingWorkspaceId) {
+          navigateToWorkspace(remainingWorkspaceId);
+        } else {
+          setActiveWorkspace(null);
+          router.push("/");
+        }
       }
+    } finally {
+      setDeletingWorkspace(false);
+      setWorkspaceToDelete(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    if (deletingWorkspace) {
+      return;
+    }
+
+    setWorkspaceToDelete(null);
   };
 
   const startRename = (id: string, name: string) => {
@@ -227,6 +250,7 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
   };
 
   return (
+    <>
     <aside
       className={`sticky top-0 flex h-screen flex-shrink-0 flex-col overflow-hidden border-r border-border/50 bg-surface/50 transition-[width] duration-300 ${
         isCollapsed ? "w-16" : "w-72"
@@ -580,5 +604,16 @@ export function WorkspaceSidebar({ currentWorkspaceId = null }: WorkspaceSidebar
         </button>
       </div>
     </aside>
+
+    {workspaceToDelete && (
+      <ConfirmDeleteModal
+        entityType="workspace"
+        entityName={workspaceToDelete.name}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        isProcessing={deletingWorkspace}
+      />
+    )}
+    </>
   );
 }

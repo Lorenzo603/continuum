@@ -29,6 +29,7 @@ import { StreamSearchBar } from "./StreamSearchBar";
 import { NewStreamForm } from "./NewStreamForm";
 import { EmptyState } from "./EmptyState";
 import { CardEditorModal } from "./CardEditorModal";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import { WorkspaceViewNav } from "./WorkspaceViewNav";
 import type { Stream, StreamNode } from "@/types";
 
@@ -45,6 +46,8 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
   const settingsLoaded = useSettingsStore((s) => s.loaded);
   const filteredStreams = useFilteredStreams(streams, archivedStreams, searchQuery, showArchived, statusFilters, cardsByStream);
   const [isCreatingTopStream, setIsCreatingTopStream] = useState(false);
+  const [streamToDelete, setStreamToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [deletingStream, setDeletingStream] = useState(false);
 
   // Fetch settings once on mount
   useEffect(() => { if (!settingsLoaded) fetchSettings(); }, [settingsLoaded, fetchSettings]);
@@ -76,6 +79,32 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
     },
     [streams, reorderStreams]
   );
+
+  const handleRequestDeleteStream = useCallback((id: string, title: string) => {
+    setStreamToDelete({ id, title });
+  }, []);
+
+  const handleConfirmDeleteStream = useCallback(async () => {
+    if (!streamToDelete || deletingStream) {
+      return;
+    }
+
+    setDeletingStream(true);
+    try {
+      await deleteStream(streamToDelete.id);
+    } finally {
+      setDeletingStream(false);
+      setStreamToDelete(null);
+    }
+  }, [deleteStream, deletingStream, streamToDelete]);
+
+  const handleCancelDeleteStream = useCallback(() => {
+    if (deletingStream) {
+      return;
+    }
+
+    setStreamToDelete(null);
+  }, [deletingStream]);
 
   if (loading && streams.length === 0) {
     return <StreamBoardLoadingState />;
@@ -170,7 +199,7 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
             <SortableStreamTree
               key={stream.id}
               node={stream}
-              onDelete={deleteStream}
+              onDelete={handleRequestDeleteStream}
               onArchive={archiveStream}
               onReorderChildren={reorderStreams}
             />
@@ -212,6 +241,16 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
 
       <CardEditorModal />
 
+      {streamToDelete && (
+        <ConfirmDeleteModal
+          entityType="stream"
+          entityName={streamToDelete.title}
+          onCancel={handleCancelDeleteStream}
+          onConfirm={handleConfirmDeleteStream}
+          isProcessing={deletingStream}
+        />
+      )}
+
       {!showArchived && archivedStreams.length > 0 && (
         <ArchivedStreamsSection
           streams={archivedStreams}
@@ -238,7 +277,7 @@ function SortableStreamTree({
   onReorderChildren,
 }: {
   node: StreamNode;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, title: string) => void;
   onArchive: (id: string) => Promise<void>;
   onReorderChildren: (parentStreamId: string | null, orderedIds: string[]) => Promise<void>;
 }) {
@@ -297,7 +336,7 @@ function SortableStreamTree({
         hasChildren={hasChildren}
         isExpanded={isExpanded}
         onToggleExpand={() => toggleStreamExpand(node.id)}
-        onDelete={() => onDelete(node.id)}
+        onDelete={() => onDelete(node.id, node.title)}
         onArchive={() => onArchive(node.id)}
         dragHandleProps={{ ...attributes, ...listeners }}
       />

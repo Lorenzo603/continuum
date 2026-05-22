@@ -4,6 +4,7 @@ import { memo, useState, useRef, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useCardStore } from "@/stores/cardStore";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { toast } from "sonner";
 import type { Card, CardStatus } from "@/types";
 import { CARD_STATUSES } from "@/types";
@@ -31,6 +32,8 @@ export const CardItem = memo(function CardItem({
 }: CardItemProps) {
   const openCardEditor = useUIStore((s) => s.openCardEditor);
   const deleteCard = useCardStore((s) => s.deleteCard);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCard, setDeletingCard] = useState(false);
 
   const updateCard = useCardStore((s) => s.updateCard);
   const isOverflowing = card.content.length > 132;
@@ -39,11 +42,15 @@ export const CardItem = memo(function CardItem({
     : card.content;
 
   const handleDelete = async () => {
+    setDeletingCard(true);
     try {
       await deleteCard(card.id, streamId);
       toast.success("Card deleted");
     } catch {
       toast.error("Failed to delete card");
+    } finally {
+      setDeletingCard(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -64,6 +71,7 @@ export const CardItem = memo(function CardItem({
   });
 
   return (
+    <>
     <div
       className={`group/card relative min-w-[280px] max-w-[320px] flex-shrink-0 self-stretch rounded-lg border transition-colors duration-150 ${
         card.isEditable
@@ -152,7 +160,7 @@ export const CardItem = memo(function CardItem({
                   </svg>
                 </button>
                 <button
-                  onClick={handleDelete}
+                  onClick={() => setShowDeleteModal(true)}
                   className="cursor-pointer rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-danger hover:bg-danger/10"
                   title="Delete card"
                 >
@@ -223,6 +231,19 @@ export const CardItem = memo(function CardItem({
         <div className="mt-2 text-[10px] text-muted">{formattedDate}</div>
       </div>
     </div>
+    {showDeleteModal && (
+      <ConfirmDeleteModal
+        entityType="card"
+        onCancel={() => {
+          if (!deletingCard) {
+            setShowDeleteModal(false);
+          }
+        }}
+        onConfirm={handleDelete}
+        isProcessing={deletingCard}
+      />
+    )}
+    </>
   );
 });
 
