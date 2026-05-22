@@ -102,7 +102,7 @@ export function StreamBoard({ workspaceId }: StreamBoardProps) {
 
   return (
     <div className="flex flex-col divide-y divide-border/30">
-      <div id="stream-board-top" className="flex justify-end pb-2">
+      <div id="stream-board-top" className="flex justify-end pb-2 mb-3">
         <a
           href="#stream-board-bottom"
           className="text-xs text-muted hover:text-primary transition-colors"
@@ -360,7 +360,7 @@ function ArchivedStreamsSection({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="mt-6 border-t border-border/40 pt-4">
+    <div className="mt-6 border-t border-border/40 pt-4 pb-4">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors cursor-pointer"
