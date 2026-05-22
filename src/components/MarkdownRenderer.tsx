@@ -11,6 +11,16 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function addLinkAttributes(html: string): string {
+  return html.replace(/<a\b([^>]*)>/gi, (_, attrs: string) => {
+    const hasTarget = /\btarget\s*=\s*/i.test(attrs);
+    const hasRel = /\brel\s*=\s*/i.test(attrs);
+    const targetAttr = hasTarget ? "" : ' target="_blank"';
+    const relAttr = hasRel ? "" : ' rel="noopener noreferrer"';
+    return `<a${attrs}${targetAttr}${relAttr}>`;
+  });
+}
+
 /** Extension that escapes all raw HTML in the Markdown source. */
 const escapeHtmlExtension: TokenizerAndRendererExtension = {
   name: "html",
@@ -33,7 +43,8 @@ export function MarkdownRenderer({ content }: { content: string }) {
   const html = useMemo(() => {
     const trimmed = content.trim();
     if (!trimmed) return "";
-    return marked.parse(trimmed, { async: false }) as string;
+    const renderedHtml = marked.parse(trimmed, { async: false }) as string;
+    return addLinkAttributes(renderedHtml);
   }, [content]);
 
   const isEmpty = !content.trim();
