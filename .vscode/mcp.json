@@ -1,12 +1,4 @@
 {
 	"servers": {
-		"continuum": {
-			"type": "stdio",
-			"command": "npm",
-			"args": [
-				"run",
-				"mcp:server"
-			]
-		}
 	}
 }
