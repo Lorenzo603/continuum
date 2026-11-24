@@ -7,7 +7,7 @@ A timeline-based workstream evolution system built with Next.js. Organize person
 - **Framework**: Next.js 16 (App Router, Turbopack)
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS 4
-- **Database**: SQLite (via better-sqlite3) — Postgres-ready via Drizzle
+- **Database**: PostgreSQL (via node-postgres + Drizzle)
 - **ORM**: Drizzle ORM
 - **State**: Zustand
 - **Validation**: Zod
@@ -19,8 +19,9 @@ A timeline-based workstream evolution system built with Next.js. Organize person
 # Install dependencies
 npm install
 
-# Configure environment
-# Create .env.local manually
+# Configure environment (see .env.example)
+# Create .env manually and set the required DATABASE_URL, e.g.
+# DATABASE_URL=postgresql://user:password@localhost:5432/continuum_example
 
 # Auth mode switch (build-time)
 # NEXT_PUBLIC_ENABLE_CLERK_AUTH=true

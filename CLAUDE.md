@@ -10,7 +10,7 @@ Continuum is a **timeline-based workstream organizer** — a Next.js web app for
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS v4, PostCSS
 - **State:** Zustand (client stores), React Server Components (server state)
-- **Database:** Drizzle ORM with dual-dialect support — SQLite (better-sqlite3, default for dev) and PostgreSQL (node-postgres, default for Docker/prod)
+- **Database:** PostgreSQL (node-postgres) via Drizzle ORM
 - **Validation:** Zod
 - **Drag & Drop:** @dnd-kit
 - **Fonts:** Outfit, DM Sans (next/font/google)
@@ -25,7 +25,7 @@ npm install
 npm run dev          # starts on port 4000
 ```
 
-Default dev uses SQLite (`./continuum.db`). No extra setup needed.
+Default dev requires a PostgreSQL database; set `DATABASE_URL` in `.env` (see `.env.example`).
 
 ## Key Commands
 
@@ -44,9 +44,7 @@ Default dev uses SQLite (`./continuum.db`). No extra setup needed.
 
 | Variable | Description | Default |
 |---|---|---|
-| `DB_TYPE` | `"sqlite"` or `"postgres"` | `"sqlite"` |
-| `SQLITE_PATH` | Path to SQLite file | `"./continuum.db"` |
-| `DATABASE_URL` | PostgreSQL connection string | — |
+| `DATABASE_URL` | PostgreSQL connection string (required) | — |
 | `NEXT_PUBLIC_ENABLE_CLERK_AUTH` | Build-time auth mode switch (`"true"` Clerk, `"false"` legacy token mode) | `"true"` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (client) | — |
 | `CLERK_SECRET_KEY` | Clerk secret key (server) | — |
@@ -74,10 +72,9 @@ src/
 │       └── cards/          # CRUD
 ├── components/             # React components (mix of client and server)
 ├── db/
-│   ├── config.ts           # DB_TYPE, connection string resolution
-│   ├── index.ts            # Drizzle instance factory (sqlite or postgres)
-│   ├── schema.pg.ts        # PostgreSQL schema
-│   ├── schema.sqlite.ts    # SQLite schema
+│   ├── config.ts           # DATABASE_URL resolution
+│   ├── index.ts            # PostgreSQL Drizzle instance
+│   ├── schema.ts           # PostgreSQL schema
 │   └── seed.ts             # Database seeder
 ├── hooks/                  # Custom React hooks (useCards, useStreams, etc.)
 ├── lib/                    # Server-side business logic
@@ -110,11 +107,11 @@ src/
 
 ### Database
 
-- Dual-dialect: schemas at `src/db/schema.pg.ts` and `src/db/schema.sqlite.ts` — keep both in sync when modifying the schema.
-- Drizzle config at `drizzle.config.ts` dynamically selects dialect based on `DB_TYPE`.
-- `src/db/index.ts` exports a unified `db`, `workspaces`, `streams`, `cards` — typed as `any` to support both dialects.
+- PostgreSQL: schema at `src/db/schema.ts`.
+- Drizzle config at `drizzle.config.ts` always uses the PostgreSQL dialect.
+- `src/db/index.ts` exports a single PostgreSQL-backed `db`, `workspaces`, `streams`, `cards` — typed as `any`.
 - IDs are UUIDs (generated with `uuid` v4).
-- Migrations in `drizzle/pg/` (PostgreSQL only currently).
+- Migrations in `drizzle/pg/`.
 
 ### API Routes
 
@@ -147,7 +144,7 @@ src/
 ### Docker
 
 - Multi-stage Dockerfile: `deps` → `build` → `production`.
-- Production image uses PostgreSQL (`DB_TYPE=postgres`).
+- Production image uses PostgreSQL.
 - Runs as non-root `appuser`, exposes port 3000.
 - Uses Next.js standalone output mode.
 

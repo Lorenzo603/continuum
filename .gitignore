@@ -1,6 +1,3 @@
-# Ignore local sqlite database files
-continuum.db*
-
 # Ignore script variable files
 scripts/scripts-config.txt
 

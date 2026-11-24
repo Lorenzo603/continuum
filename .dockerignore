@@ -37,11 +37,6 @@ Dockerfile*
 docker-compose*
 .dockerignore
 
-# Database files
-*.db
-*.sqlite
-continuum.db*
-
 # CI/CD
 .github/
 

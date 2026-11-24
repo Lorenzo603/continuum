@@ -1,17 +1,11 @@
 import "dotenv/config";
-import { DB_TYPE, SQLITE_PATH, DATABASE_URL } from "./config";
+import { DATABASE_URL } from "./config";
 import {
-  workspaces as sqliteWorkspaces,
-  streams as sqliteStreams,
-  cards as sqliteCards,
-} from "./schema.sqlite";
-import {
-  workspaces as pgWorkspaces,
-  streams as pgStreams,
-  cards as pgCards,
-} from "./schema.pg";
+  workspaces,
+  streams,
+  cards,
+} from "./schema";
 import { v4 as uuid } from "uuid";
-import path from "path";
 
 type StatusValue =
   | "completed"
@@ -23,69 +17,29 @@ type StatusValue =
   | "backlog";
 
 // ---------------------------------------------------------------------------
-// Initialise db + table references for the active dialect
+// Initialise db connection
 // ---------------------------------------------------------------------------
 
-function createConnection(): {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  db: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  workspaces: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  streams: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cards: any;
-  cleanup: () => void | Promise<void>;
-} {
-  if (DB_TYPE === "sqlite") {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Database = require("better-sqlite3");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { drizzle } = require("drizzle-orm/better-sqlite3");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Pool } = require("pg");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { drizzle } = require("drizzle-orm/node-postgres");
 
-    const dbPath = path.resolve(process.cwd(), SQLITE_PATH);
-    const sqlite = new Database(dbPath);
-    sqlite.pragma("journal_mode = WAL");
-    sqlite.pragma("foreign_keys = ON");
-
-    return {
-      db: drizzle(sqlite),
-      workspaces: sqliteWorkspaces,
-      streams: sqliteStreams,
-      cards: sqliteCards,
-      cleanup: () => sqlite.close(),
-    };
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Pool } = require("pg");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/node-postgres");
-
-  if (!DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL is required when DB_TYPE=postgres. Set it in your .env file.",
-    );
-  }
-
-  const pool = new Pool({ connectionString: DATABASE_URL });
-  return {
-    db: drizzle(pool),
-    workspaces: pgWorkspaces,
-    streams: pgStreams,
-    cards: pgCards,
-    cleanup: () => pool.end(),
-  };
+if (!DATABASE_URL) {
+  throw new Error("DATABASE_URL is required. Set it in your .env file.");
 }
+
+const pool = new Pool({ connectionString: DATABASE_URL });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db: any = drizzle(pool);
 
 // ---------------------------------------------------------------------------
 // Seed
 // ---------------------------------------------------------------------------
 
 async function seed() {
-  console.log(`🌱 Seeding database (${DB_TYPE})...`);
+  console.log("🌱 Seeding database (postgres)...");
 
-  const { db, workspaces, streams, cards, cleanup } = createConnection();
   const seedUserId = process.env.SEED_USER_ID ?? "seed-user";
 
   // Clear existing data
@@ -236,7 +190,7 @@ async function seed() {
     },
     {
       content:
-        "Deep dive into SQLite WAL mode and concurrent access patterns for better-sqlite3.",
+        "Deep dive into PostgreSQL connection pooling and indexing patterns for Drizzle.",
       status: "completed",
       tags: ["learning", "database"],
     },
@@ -355,7 +309,7 @@ async function seed() {
   console.log("   9 streams total");
   console.log(`   ${totalCards} cards total`);
 
-  await cleanup();
+  await pool.end();
 }
 
 seed().catch((err) => {
