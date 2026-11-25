@@ -2,9 +2,7 @@
 name: nextjs-best-practices
 description: Best practices for building Next.js (App Router) apps with modern caching, tooling, and server/client boundaries (aligned with Next.js 16.1.1). Use when writing or editing Next.js app code (.ts/.tsx), layouts, pages, route handlers, or components.
 ---
-<!-- Ported from .claude/rules/nextjs.instructions.md.
-     Original applyTo scope (not supported by Pi): **/*.tsx, **/*.ts, **/*.jsx, **/*.js, **/*.css.
-     This is now an on-demand skill; Pi loads it when the task matches. -->
+<!-- Applies to: **/*.tsx, **/*.ts, **/*.jsx, **/*.js, **/*.css -->
 
 # Next.js Best Practices for LLMs (2026)
 

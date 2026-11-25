@@ -2,9 +2,7 @@
 name: html-css-color-guide
 description: Color usage guidelines and styling rules for HTML/CSS/JS styles to ensure accessible, professional designs (60-30-10 rule, hot/cool color usage, gradients). Use when updating or creating HTML/CSS styles or color/theme changes.
 ---
-<!-- Ported from .claude/rules/html-css-style-color-guide.instructions.md.
-     Original applyTo scope (not supported by Pi): **/*.html, **/*.css, **/*.js.
-     This is now an on-demand skill; Pi loads it when the task matches. -->
+<!-- Applies to: **/*.html, **/*.css, **/*.js -->
 
 # HTML CSS Style Color Guide
 

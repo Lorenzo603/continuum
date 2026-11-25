@@ -1,10 +1,8 @@
 ---
 name: nextjs-tailwind-standards
-description: Next.js + Tailwind CSS development standards: architecture, TypeScript strictness, styling, state, data fetching, security, and performance rules for this project. Use when building or styling Next.js UI components (.tsx/.css).
+description: 'Next.js + Tailwind CSS development standards: architecture, TypeScript strictness, styling, state, data fetching, security, and performance rules for this project. Use when building or styling Next.js UI components (.tsx/.css).'
 ---
-<!-- Ported from .claude/rules/nextjs-tailwind.instructions.md.
-     Original applyTo scope (not supported by Pi): **/*.tsx, **/*.ts, **/*.jsx, **/*.js, **/*.css.
-     This is now an on-demand skill; Pi loads it when the task matches. -->
+<!-- Applies to: **/*.tsx, **/*.ts, **/*.jsx, **/*.js, **/*.css -->
 
 # Next.js + Tailwind Development Instructions
 

@@ -2,9 +2,7 @@
 name: docker-best-practices
 description: Comprehensive best practices for creating optimized, secure, and maintainable Docker images and managing containers (multi-stage builds, layer optimization, security scanning, runtime best practices). Use when creating or editing Dockerfiles, Docker Compose files, or any containerization configuration.
 ---
-<!-- Ported from .claude/rules/containerization-docker-best-practices.instructions.md.
-     Original applyTo scope (not supported by Pi): **/Dockerfile,**/Dockerfile.*,**/*.dockerfile,**/docker-compose*.yml,**/docker-compose*.yaml,**/compose*.yml,**/compose*.yaml.
-     This is now an on-demand skill; Pi loads it when the task matches. -->
+<!-- Applies to: **/Dockerfile, **/Dockerfile.*, **/*.dockerfile, **/docker-compose*.yml, **/docker-compose*.yaml, **/compose*.yml, **/compose*.yaml -->
 
 # Containerization & Docker Best Practices
 
