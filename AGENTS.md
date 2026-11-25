@@ -159,6 +159,6 @@ src/
 
 ## Development Environment
 
-- The VS Code terminal runs **bash (WSL)**, not cmd or PowerShell.
-- Always use Linux paths (`/mnt/c/p/continuum/...`) and Linux commands when running in the terminal.
-- The workspace root on WSL is `/mnt/c/p/continuum`.
+- Supported dev environments: **Git Bash on Windows** and **zsh on macOS**.
+- Use POSIX-style paths and POSIX shell commands in the terminal (e.g. `/c/p/continuum/...` in Git Bash; the native path in zsh).
+- Workspace root: `C:/p/continuum` on Windows; the equivalent local path on macOS.
