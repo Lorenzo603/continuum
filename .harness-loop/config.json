@@ -17,12 +17,14 @@
   "color": "auto",
   "max_attempts": 3,
   "verify_commands": [
+    "npm test",
     "npm run lint",
-    "npx tsc --noEmit"
+    "npx tsc --noEmit",
+    "npm run test:integration"
   ],
   "verify_timeout_seconds": 900,
   "verify_env_script": "",
-  "require_tests": false,
+  "require_tests": true,
   "source_globs": [
     "src/**"
   ],
@@ -33,6 +35,6 @@
     "src/**/*.spec.ts",
     "src/**/*.spec.tsx"
   ],
-  "commit": false,
-  "push": false
+  "commit": true,
+  "push": true
 }
