@@ -16,12 +16,23 @@
   "stream_raw": false,
   "color": "auto",
   "max_attempts": 3,
-  "verify_commands": [],
+  "verify_commands": [
+    "npm run lint",
+    "npx tsc --noEmit"
+  ],
   "verify_timeout_seconds": 900,
   "verify_env_script": "",
-  "require_tests": true,
-  "source_globs": [],
-  "test_globs": [],
-  "commit": true,
-  "push": true
+  "require_tests": false,
+  "source_globs": [
+    "src/**"
+  ],
+  "test_globs": [
+    "tests/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ],
+  "commit": false,
+  "push": false
 }
