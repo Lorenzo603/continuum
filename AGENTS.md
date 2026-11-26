@@ -43,6 +43,7 @@ Default dev requires a PostgreSQL database; set `DATABASE_URL` in `.env` (see `.
 | `npm run test:watch` | Unit tests in watch mode |
 | `npm run test:integration` | DB-backed integration tests (uses `.env` `DATABASE_URL`) |
 | `npm run test:all` | Unit + integration |
+| `npm run test:ui` | Playwright browser smoke suite (needs Clerk test account env vars) |
 
 ## Testing
 
@@ -50,6 +51,7 @@ Vitest-based suite; see `tests/README.md` for details and DB-safety guarantees.
 - `tests/unit/**` — pure logic (validations, lib failure paths, Zustand stores with mocked fetch). No DB/network.
 - `tests/integration/**` — real Drizzle + Postgres via `.env` `DATABASE_URL`. Each test creates a dedicated `test-integration-*` workspace for an `it-user-*` user and deletes it in `afterEach` (cascade verifies child cleanup). Never touches existing data.
 - Configs: `vitest.config.ts` (unit), `vitest.integration.config.ts` (integration; loads `.env`).
+- `tests/ui/**` — optional Playwright smoke suite against the app in normal Clerk mode (see `tests/README.md`). Requires `PLAYWRIGHT_CLERK_EMAIL` / `PLAYWRIGHT_CLERK_PASSWORD` and a dedicated Clerk Dev test user; browsers via `npx playwright install chromium`.
 
 ## Environment Variables
 
