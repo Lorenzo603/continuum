@@ -70,8 +70,12 @@ test.describe("Continuum smoke (Clerk test account)", () => {
     await input.fill(name);
     await page.getByRole("button", { name: /^create$/i }).click();
 
-    // The new workspace appears in the sidebar.
-    await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 20_000 });
+    // The new workspace appears in the sidebar. Scope the assertion to the
+    // sidebar: the workspace name also renders in the "Choose a workspace"
+    // link in the main content area, so an unscoped getByText resolves to
+    // multiple elements and trips Playwright's strict mode.
+    const sidebar = page.getByRole("complementary");
+    await expect(sidebar.getByText(name, { exact: true })).toBeVisible({ timeout: 20_000 });
 
     // Best-effort cleanup through the same authenticated session the app uses.
     try {
