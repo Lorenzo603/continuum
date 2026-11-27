@@ -28,7 +28,6 @@ export interface Card {
   userId: string;
   streamId: string;
   content: string;
-  version: number;
   isEditable: boolean;
   metadata: CardMetadata | null;
   createdAt: string;
@@ -50,6 +49,23 @@ export interface CardMetadata {
   tags?: string[];
   dueDate?: string;
   status?: CardStatus;
+}
+
+/**
+ * An explicit "next" link between two cards in the same stream.
+ * The reverse direction ("previous") is derived — never stored.
+ */
+export interface CardLink {
+  id: string;
+  sourceCardId: string;
+  targetCardId: string;
+  createdAt: string;
+}
+
+/** A card with resolved previous/next arrays (ordered by createdAt, then id). */
+export interface CardWithRelations extends Card {
+  previousCards: Card[];
+  nextCards: Card[];
 }
 
 // A stream with its resolved children for tree rendering
@@ -87,6 +103,8 @@ export interface CreateCardInput {
   streamId: string;
   content: string;
   metadata?: CardMetadata | null;
+  /** Required unless the stream is empty (the root-card exception). */
+  sourceCardId?: string;
 }
 
 export interface UpdateCardInput {

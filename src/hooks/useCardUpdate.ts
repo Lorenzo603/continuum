@@ -25,9 +25,10 @@ export function useCardUpdate() {
     async (
       streamId: string,
       content: string,
-      metadata?: CardMetadata | null
+      metadata?: CardMetadata | null,
+      sourceCardId?: string
     ) => {
-      await createCard(streamId, content, metadata);
+      await createCard(streamId, content, metadata, sourceCardId);
       setEditingCard(null);
     },
     [createCard, setEditingCard]

@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import type { Card, CardMetadata } from "@/types";
+import type { CardMetadata, CardWithRelations } from "@/types";
 
 interface CardState {
-  cardsByStream: Record<string, Card[]>;
+  cardsByStream: Record<string, CardWithRelations[]>;
   loading: Record<string, boolean>;
   error: string | null;
   authRequired: boolean;
@@ -14,7 +14,8 @@ interface CardState {
   createCard: (
     streamId: string,
     content: string,
-    metadata?: CardMetadata | null
+    metadata?: CardMetadata | null,
+    sourceCardId?: string
   ) => Promise<void>;
   updateCard: (
     cardId: string,
@@ -87,33 +88,44 @@ export const useCardStore = create<CardState>((set, get) => ({
     });
   },
 
-  createCard: async (streamId, content, metadata = null) => {
+  createCard: async (streamId, content, metadata = null, sourceCardId) => {
     const prev = get().cardsByStream[streamId] ?? [];
     // Bump mutation version to invalidate any in-flight fetchCards
     const nextVersion = (get()._mutationVersion[streamId] ?? 0) + 1;
-    // Optimistic: add a temporary card
-    const optimisticCard: Card = {
+    const sourceCard = sourceCardId
+      ? prev.find((c) => c.id === sourceCardId) ?? null
+      : null;
+
+    // Optimistic: add a temporary card (linked to the source card, if any)
+    const optimisticCard: CardWithRelations = {
       id: `temp-${Date.now()}`,
-      userId: prev[prev.length - 1]?.userId ?? "optimistic-user",
+      userId: sourceCard?.userId ?? prev[prev.length - 1]?.userId ?? "optimistic-user",
       streamId,
       content,
-      version: prev.length > 0 ? prev[prev.length - 1].version + 1 : 1,
       isEditable: true,
       metadata: metadata ?? null,
       createdAt: new Date().toISOString(),
+      previousCards: sourceCard ? [sourceCard] : [],
+      nextCards: [],
     };
-    const optimisticCards = prev.map((c) => {
-      if (!c.isEditable) return c;
-      const completedMetadata: CardMetadata = {
-        ...(c.metadata ?? {}),
-        status: "completed",
-      };
-      return {
-        ...c,
-        isEditable: false as const,
-        metadata: completedMetadata,
-      };
-    });
+
+    // Optimistically mark ONLY the source card completed/non-editable
+    const optimisticCards = sourceCard
+      ? prev.map((c) => {
+          if (c.id !== sourceCard.id) return c;
+          const completedMetadata: CardMetadata = {
+            ...(c.metadata ?? {}),
+            status: "completed",
+          };
+          return {
+            ...c,
+            isEditable: false as const,
+            metadata: completedMetadata,
+            nextCards: [...(c.nextCards ?? []), optimisticCard],
+          };
+        })
+      : prev;
+
     set((state) => ({
       _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
       cardsByStream: {
@@ -126,7 +138,7 @@ export const useCardStore = create<CardState>((set, get) => ({
       const res = await fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ streamId, content, metadata }),
+        body: JSON.stringify({ streamId, content, metadata, sourceCardId }),
       });
       if (res.status === 401 || res.status === 403) {
         set((state) => ({
@@ -137,9 +149,9 @@ export const useCardStore = create<CardState>((set, get) => ({
         return;
       }
       if (!res.ok) throw new Error("Failed to create card");
-      const newCard: Card = await res.json();
+      const newCard: CardWithRelations = await res.json();
 
-      // Re-fetch to ensure server-side status updates (previous card -> completed) are reflected
+      // Re-fetch to ensure server-side status updates (source card -> completed) are reflected
       const cardsRes = await fetch(`/api/streams/${streamId}/cards`, {
         cache: "no-store",
       });
@@ -204,7 +216,7 @@ export const useCardStore = create<CardState>((set, get) => ({
         return;
       }
       if (!res.ok) throw new Error("Failed to update card");
-      const updatedCard: Card = await res.json();
+      const updatedCard: CardWithRelations = await res.json();
 
       // Replace the optimistic card with the real server card
       set((state) => {
@@ -230,11 +242,17 @@ export const useCardStore = create<CardState>((set, get) => ({
     const prev = get().cardsByStream[streamId] ?? [];
     const nextVersion = (get()._mutationVersion[streamId] ?? 0) + 1;
 
-    // Optimistic: remove card and make previous one editable
-    const filtered = prev.filter((c) => c.id !== cardId);
-    if (filtered.length > 0) {
-      filtered[filtered.length - 1] = { ...filtered[filtered.length - 1], isEditable: true };
-    }
+    // Optimistic: remove the card (the server re-marks orphaned sources as editable)
+    const filtered = prev
+      .filter((c) => c.id !== cardId)
+      .map((c) => {
+        const nextCards = (c.nextCards ?? []).filter((nc) => nc.id !== cardId);
+        const previousCards = (c.previousCards ?? []).filter((pc) => pc.id !== cardId);
+        return nextCards.length === (c.nextCards ?? []).length &&
+          previousCards.length === (c.previousCards ?? []).length
+          ? c
+          : { ...c, nextCards, previousCards };
+      });
     set((state) => ({
       _mutationVersion: { ...state._mutationVersion, [streamId]: nextVersion },
       cardsByStream: { ...state.cardsByStream, [streamId]: filtered },

@@ -1,6 +1,6 @@
 ---
-status: todo
-attempts: 0
+status: done
+attempts: 2
 title: "Many-to-many next/previous links between cards"
 source: backlog.md
 depends_on: nothing
@@ -137,3 +137,36 @@ QUALITY BAR
 - [ ] Version displays and related copy removed; siblings stack vertically; multiple latest/leaf cards per stream work.
 - [ ] `npm test`, `npm run lint`, `npx tsc --noEmit` and `npm run test:integration` all pass (run them yourself; the harness verifies independently).
 - [ ] MCP server untouched; stale MCP integration points listed in the final summary.
+
+## Run log
+
+-   All four checks pass already. Let me audit the task requirements against the current state — the previous attempt may have been incomplete.
+-   Now I'll fix the one real bug I found: the "New card" button in StreamRow opens the editor with no `sourceCardId`, which fails with a 400 once a stream has cards. The modal should default the source to the newest leaf card.
+-   Now let me extract the "newest leaf card" logic into a pure, testable helper and use it in the modal:
+-   All checks pass. Let me do a final review of the modal diff to confirm coherence:
+-   Everything is verified and green. The previous attempt had already implemented the bulk of the task; I audited it, fixed the one real gap I found (the "New card" button created a card without a `sourceCardId`, which the server now rejects once a stream has cards), removed dead code, added tests, and re-ran everything.
+-   Summary of the state of the work:
+-   **Data model / migration** — `card_links` table (`id`, `sourceCardId` FK→cards ON DELETE CASCADE, `targetCardId` FK→cards ON DELETE CASCADE, `createdAt`; UNIQUE(sourceCardId, targetCardId)); `cards.version` and `stream_version_idx` dropped. Migration `drizzle/pg/0003_card_links.sql` creates the table, seeds one link per consecutive pair ordered by `version` ASC (`ON CONFLICT DO NOTHING`, `created_at` pinned to target's), drops the index and column — idempotent and non-destructive to card content.
+-   **Logic** — `src/lib/cardLinks.ts` (centralized `addCardLink`/`removeCardLink`/`getNextCards`/`getPreviousCards`, single grouped queries, reverse-join mirror semantics, source marked completed/non-editable on first outgoing link, re-mark editable on last-link removal, transactional); `src/lib/linkGraph.ts` (pure DFS cycle detection, also rejects S == T); `src/lib/cards.ts` (root-exception create with required `sourceCardId`, leaf-only edit/delete, cascade re-mark of orphaned sources); `src/lib/cardLayout.ts` (tree build + `getNewestLeafCard`); `src/lib/latestCards.ts` (all leaf cards per stream, tree order).
+-   **API** — `POST /api/cards` (201, sourceCardId required unless empty stream), `POST /api/cards/:id/next` (201 + resolved previous/next), `DELETE /api/cards/:id/next/:targetId` (updated card), GET/PATCH/DELETE with resolved relations; 400 validation / 404 ownership / 409 conflicts / 401 / 500.
+-   **UI** — links implicit; board shows siblings stacked vertically under parent (`StreamRow` + `buildCardTree`); "branch here" button on any card; "New card" now defaults to branching from the newest leaf card (the fix I made); version displays/copy removed; `LeafCardTile` replaces `LatestCardTile` (all leaves).
+-   **Tests** — unit (validations, link graph cycle detection, layout, stores, newest-leaf helper) and integration (root create, source requirement, mirror semantics, cascade delete, cycle/self/duplicate/cross-stream/per-user rejection, leaf-only deletion, multiple editables per stream, leaf-cards-per-workspace).
+-   **Verification** — `npm test` (129 pass), `npm run lint` (0 errors, 8 pre-existing warnings), `npx tsc --noEmit` (clean), `npm run test:integration` (39 pass).
+-   **Stale MCP server integration points (untouched, per task)**: `src/mcp/server.ts:40` (`version: number` in card type), `:232` (`version: "1.0.0"` in server info), `:335` ("automatically close the previous editable card version" copy), `:388` (`.sort((a, b) => b.version - a.version)[0]` latest-card lookup); also its card-creation flow likely creates without `sourceCardId` (now required server-side for non-empty streams) and expects versioned ordering.
+-   **Caveats**: the migration was applied to the dev DB (integration tests pass against it); I did not re-apply it to a fresh empty database. The empty `relationships/` dirs were removed; the unused inline `CardEditor.tsx` was deleted.
+-   STATUS: DONE npm test (129), npm run lint (0 errors), npx tsc --noEmit (clean), npm run test:integration (39) all pass; fixed the New-card default branch source and removed dead code/stale version references
+-   All four checks pass already. Let me audit the task requirements against the current state — the previous attempt may have been incomplete.
+-   Now I'll fix the one real bug I found: the "New card" button in StreamRow opens the editor with no `sourceCardId`, which fails with a 400 once a stream has cards. The modal should default the source to the newest leaf card.
+-   Now let me extract the "newest leaf card" logic into a pure, testable helper and use it in the modal:
+-   All checks pass. Let me do a final review of the modal diff to confirm coherence:
+-   Everything is verified and green. The previous attempt had already implemented the bulk of the task; I audited it, fixed the one real gap I found (the "New card" button created a card without a `sourceCardId`, which the server now rejects once a stream has cards), removed dead code, added tests, and re-ran everything.
+-   Summary of the state of the work:
+-   **Data model / migration** — `card_links` table (`id`, `sourceCardId` FK→cards ON DELETE CASCADE, `targetCardId` FK→cards ON DELETE CASCADE, `createdAt`; UNIQUE(sourceCardId, targetCardId)); `cards.version` and `stream_version_idx` dropped. Migration `drizzle/pg/0003_card_links.sql` creates the table, seeds one link per consecutive pair ordered by `version` ASC (`ON CONFLICT DO NOTHING`, `created_at` pinned to target's), drops the index and column — idempotent and non-destructive to card content.
+-   **Logic** — `src/lib/cardLinks.ts` (centralized `addCardLink`/`removeCardLink`/`getNextCards`/`getPreviousCards`, single grouped queries, reverse-join mirror semantics, source marked completed/non-editable on first outgoing link, re-mark editable on last-link removal, transactional); `src/lib/linkGraph.ts` (pure DFS cycle detection, also rejects S == T); `src/lib/cards.ts` (root-exception create with required `sourceCardId`, leaf-only edit/delete, cascade re-mark of orphaned sources); `src/lib/cardLayout.ts` (tree build + `getNewestLeafCard`); `src/lib/latestCards.ts` (all leaf cards per stream, tree order).
+-   **API** — `POST /api/cards` (201, sourceCardId required unless empty stream), `POST /api/cards/:id/next` (201 + resolved previous/next), `DELETE /api/cards/:id/next/:targetId` (updated card), GET/PATCH/DELETE with resolved relations; 400 validation / 404 ownership / 409 conflicts / 401 / 500.
+-   **UI** — links implicit; board shows siblings stacked vertically under parent (`StreamRow` + `buildCardTree`); "branch here" button on any card; "New card" now defaults to branching from the newest leaf card (the fix I made); version displays/copy removed; `LeafCardTile` replaces `LatestCardTile` (all leaves).
+-   **Tests** — unit (validations, link graph cycle detection, layout, stores, newest-leaf helper) and integration (root create, source requirement, mirror semantics, cascade delete, cycle/self/duplicate/cross-stream/per-user rejection, leaf-only deletion, multiple editables per stream, leaf-cards-per-workspace).
+-   **Verification** — `npm test` (129 pass), `npm run lint` (0 errors, 8 pre-existing warnings), `npx tsc --noEmit` (clean), `npm run test:integration` (39 pass).
+-   **Stale MCP server integration points (untouched, per task)**: `src/mcp/server.ts:40` (`version: number` in card type), `:232` (`version: "1.0.0"` in server info), `:335` ("automatically close the previous editable card version" copy), `:388` (`.sort((a, b) => b.version - a.version)[0]` latest-card lookup); also its card-creation flow likely creates without `sourceCardId` (now required server-side for non-empty streams) and expects versioned ordering.
+-   **Caveats**: the migration was applied to the dev DB (integration tests pass against it); I did not re-apply it to a fresh empty database. The empty `relationships/` dirs were removed; the unused inline `CardEditor.tsx` was deleted.
+-   STATUS: DONE npm test (129), npm run lint (0 errors), npx tsc --noEmit (clean), npm run test:integration (39) all pass; fixed the New-card default branch source and removed dead code/stale version references

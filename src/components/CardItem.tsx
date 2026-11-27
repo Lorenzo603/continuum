@@ -83,9 +83,6 @@ export const CardItem = memo(function CardItem({
         {/* Header row */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium text-muted">
-              {card.version}
-            </span>
             {card.isEditable ? (
               <StatusDropdown
                 status={card.metadata?.status}
@@ -98,6 +95,31 @@ export const CardItem = memo(function CardItem({
             )}
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() =>
+                openCardEditor({
+                  streamId,
+                  sourceCardId: card.id,
+                })
+              }
+              className="cursor-pointer rounded p-1 text-muted opacity-0 transition-opacity group-hover/card:opacity-100 hover:text-primary hover:bg-primary/10"
+              title="Branch here — create a next card from this card"
+              aria-label="Branch here"
+            >
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <line x1="6" y1="3" x2="6" y2="15" />
+                <circle cx="18" cy="6" r="3" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="6" cy="3" r="3" />
+                <path d="M18 9a9 9 0 0 1-9 9" />
+              </svg>
+            </button>
             {card.isEditable ? (
               <div className="flex items-center gap-0.5">
                 <button

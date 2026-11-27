@@ -17,6 +17,8 @@ import {
   createCardSchema,
   updateCardSchema,
   updateSettingsSchema,
+  createCardLinkSchema,
+  cardLinkSchema,
 } from "@/lib/validations";
 
 const VALID_UUID = "123e4567-e89b-42d3-a456-426614174000";
@@ -263,6 +265,76 @@ describe("createCardSchema", () => {
   it("rejects malformed metadata", () => {
     expect(
       createCardSchema.safeParse({ streamId: VALID_UUID, content: "hi", metadata: { status: "bogus" } }).success,
+    ).toBe(false);
+  });
+});
+
+describe("createCardSchema sourceCardId", () => {
+  it("accepts a valid sourceCardId", () => {
+    const result = createCardSchema.safeParse({
+      streamId: VALID_UUID,
+      content: "hello",
+      sourceCardId: VALID_UUID_2,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a missing sourceCardId (root-card exception)", () => {
+    const result = createCardSchema.safeParse({
+      streamId: VALID_UUID,
+      content: "hello",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a non-uuid sourceCardId", () => {
+    const result = createCardSchema.safeParse({
+      streamId: VALID_UUID,
+      content: "hello",
+      sourceCardId: "not-a-uuid",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("createCardLinkSchema", () => {
+  it("accepts a valid targetCardId", () => {
+    const result = createCardLinkSchema.safeParse({ targetCardId: VALID_UUID_2 });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a missing targetCardId", () => {
+    expect(createCardLinkSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("rejects a non-uuid targetCardId", () => {
+    expect(createCardLinkSchema.safeParse({ targetCardId: "nope" }).success).toBe(false);
+  });
+});
+
+describe("cardLinkSchema", () => {
+  it("accepts valid source and target", () => {
+    const result = cardLinkSchema.safeParse({
+      sourceCardId: VALID_UUID,
+      targetCardId: VALID_UUID_2,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a missing sourceCardId", () => {
+    expect(cardLinkSchema.safeParse({ targetCardId: VALID_UUID }).success).toBe(false);
+  });
+
+  it("rejects a missing targetCardId", () => {
+    expect(cardLinkSchema.safeParse({ sourceCardId: VALID_UUID }).success).toBe(false);
+  });
+
+  it("rejects non-uuid values", () => {
+    expect(
+      cardLinkSchema.safeParse({ sourceCardId: "nope", targetCardId: VALID_UUID }).success,
+    ).toBe(false);
+    expect(
+      cardLinkSchema.safeParse({ sourceCardId: VALID_UUID, targetCardId: 42 }).success,
     ).toBe(false);
   });
 });

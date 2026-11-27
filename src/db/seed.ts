@@ -4,6 +4,7 @@ import {
   workspaces,
   streams,
   cards,
+  cardLinks,
 } from "./schema";
 import { v4 as uuid } from "uuid";
 
@@ -43,6 +44,7 @@ async function seed() {
   const seedUserId = process.env.SEED_USER_ID ?? "seed-user";
 
   // Clear existing data
+  await db.delete(cardLinks);
   await db.delete(cards);
   await db.delete(streams);
   await db.delete(workspaces);
@@ -73,26 +75,36 @@ async function seed() {
     return id;
   }
 
-  // Helper to insert cards for a stream
+  // Helper to insert cards for a stream (sequential chain, like the migrated data)
   async function insertCards(
     streamId: string,
     items: { content: string; status?: StatusValue; tags?: string[] }[],
     userId: string = seedUserId,
   ) {
+    const cardIds: string[] = [];
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const isLast = i === items.length - 1;
+      const id = uuid();
       await db.insert(cards).values({
-        id: uuid(),
+        id,
         userId,
         streamId,
         content: item.content,
-        version: i + 1,
         isEditable: isLast,
         metadata:
           item.status || item.tags
             ? { status: item.status, tags: item.tags }
             : null,
+      });
+      cardIds.push(id);
+    }
+    // Link consecutive cards so the seeded chain matches the pre-migration shape
+    for (let i = 0; i < cardIds.length - 1; i++) {
+      await db.insert(cardLinks).values({
+        id: uuid(),
+        sourceCardId: cardIds[i],
+        targetCardId: cardIds[i + 1],
       });
     }
   }

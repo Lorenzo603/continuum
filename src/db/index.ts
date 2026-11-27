@@ -27,6 +27,10 @@ export const streams: any = schema.streams;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const cards: any = schema.cards;
 
+/** The `card_links` table. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const cardLinks: any = schema.cardLinks;
+
 /** The `settings` table. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const settings: any = schema.settings;

@@ -46,6 +46,18 @@ export const createCardSchema = z.object({
   streamId: z.string().uuid(),
   content: z.string().min(1, "Content is required"),
   metadata: cardMetadataSchema,
+  // Required unless the stream is empty (the root card). Enforced in the lib,
+  // not the schema, because the schema cannot see the stream's card count.
+  sourceCardId: z.string().uuid().optional(),
+});
+
+export const createCardLinkSchema = z.object({
+  targetCardId: z.string().uuid(),
+});
+
+export const cardLinkSchema = z.object({
+  sourceCardId: z.string().uuid(),
+  targetCardId: z.string().uuid(),
 });
 
 export const updateCardSchema = z.object({

@@ -5,6 +5,7 @@ import {
   boolean,
   jsonb,
   uniqueIndex,
+  index,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
@@ -47,7 +48,6 @@ export const cards = pgTable(
       .notNull()
       .references(() => streams.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    version: integer("version").notNull().default(1),
     isEditable: boolean("is_editable").notNull().default(true),
     metadata: jsonb("metadata").$type<{
       tags?: string[];
@@ -65,8 +65,26 @@ export const cards = pgTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
   },
+  (table) => [index("cards_stream_id_idx").on(table.streamId)],
+);
+
+export const cardLinks = pgTable(
+  "card_links",
+  {
+    id: text("id").primaryKey(),
+    sourceCardId: text("source_card_id")
+      .notNull()
+      .references(() => cards.id, { onDelete: "cascade" }),
+    targetCardId: text("target_card_id")
+      .notNull()
+      .references(() => cards.id, { onDelete: "cascade" }),
+    createdAt: text("created_at")
+      .notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
   (table) => [
-    uniqueIndex("stream_version_idx").on(table.streamId, table.version),
+    uniqueIndex("card_links_source_target_idx").on(table.sourceCardId, table.targetCardId),
+    index("card_links_target_idx").on(table.targetCardId),
   ],
 );
 

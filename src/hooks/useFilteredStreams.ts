@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { StreamNode } from "@/types";
 import type { Card, CardStatus, Stream } from "@/types";
+import { compareCards as compareCardsLayout, isCardLeaf } from "@/lib/cardLayout";
 
 /**
  * Filters a hierarchical stream tree by title substring match and archive visibility.
@@ -83,16 +84,21 @@ function filterTree(nodes: StreamNode[], query: string): StreamNode[] {
 }
 
 /**
- * Returns the status of a stream's latest card, or undefined if no card/status.
- * The latest card is the last element in the array (highest version).
+ * Returns the status of a stream's newest leaf card, or undefined if no card/status.
+ * A leaf card is a card with zero outgoing "next" links (isEditable is the
+ * cached leaf flag; nextCards is the resolved source of truth when present).
  */
-function getLatestCardStatus(
+function getLatestLeafStatus(
   streamId: string,
   cardsByStream: Record<string, Card[]>,
 ): CardStatus | undefined {
   const cards = cardsByStream[streamId];
   if (!cards || cards.length === 0) return undefined;
-  return cards[cards.length - 1].metadata?.status ?? undefined;
+  const leaves = cards.filter(isCardLeaf);
+  const pool = leaves.length > 0 ? leaves : cards;
+  // newest first
+  const latest = [...pool].sort((a, b) => compareCardsLayout(b, a))[0];
+  return latest?.metadata?.status ?? undefined;
 }
 
 /**
@@ -116,7 +122,7 @@ function filterTreeByStatus(
 
     const cards = cardsByStream[node.id];
     const cardsNotLoaded = cards === undefined;
-    const latestStatus = getLatestCardStatus(node.id, cardsByStream);
+    const latestStatus = getLatestLeafStatus(node.id, cardsByStream);
     const statusMatches = latestStatus !== undefined && statusFilters.has(latestStatus);
 
     if (statusMatches || cardsNotLoaded) {

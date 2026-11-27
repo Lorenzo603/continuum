@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createCard } from "@/lib/cards";
+import { CardLinkError } from "@/lib/cardLinks";
 import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { createCardSchema } from "@/lib/validations";
 
@@ -27,6 +28,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(card, { status: 201 });
   } catch (error) {
+    if (error instanceof CardLinkError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error("Failed to create card:", error);
     return NextResponse.json(
       { error: "Failed to create card" },

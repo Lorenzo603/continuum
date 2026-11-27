@@ -120,9 +120,10 @@ interface StreamCardsModalProps {
 }
 
 export function StreamCardsModal({ streamTitle, cards, initialCardId, onClose }: StreamCardsModalProps) {
-  // Cards displayed with latest first (rightmost in the strip = most recent)
-  // We reverse so the strip shows oldest→newest left→right, and auto-scroll to the right
-  const displayCards = cards; // already ordered oldest→newest from the store
+  const displayCards = [...cards].sort((a, b) => {
+    if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
   const resolvedInitialId = initialCardId && displayCards.some((c) => c.id === initialCardId)
     ? initialCardId
     : displayCards.length > 0 ? displayCards[displayCards.length - 1].id : null;
@@ -230,13 +231,8 @@ export function StreamCardsModal({ streamTitle, cards, initialCardId, onClose }:
                   }`}
                 >
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
-                      isSelected ? "bg-primary/15 text-primary" : "bg-surface text-muted"
-                    }`}>
-                      {card.version}
-                    </span>
                     {card.isEditable && (
-                      <span className="text-[9px] font-medium text-primary/70">Latest</span>
+                      <span className="text-[9px] font-medium text-primary/70">Leaf</span>
                     )}
                     {statusColor && (
                       <span className={`inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[8px] font-medium ${statusColor.bg} ${statusColor.text}`}>
@@ -286,12 +282,9 @@ function CardDetail({ card, formatDate }: { card: Card; formatDate: (iso: string
     <div className="max-w-3xl">
       {/* Meta row */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <span className="inline-flex items-center rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-muted">
-          Version {card.version}
-        </span>
         {card.isEditable && (
           <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-            Latest
+            Leaf
           </span>
         )}
         {statusColor && statusLabel && (

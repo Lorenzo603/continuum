@@ -6,6 +6,8 @@ export type CardEditorMode = "view" | "edit";
 export interface CardEditorModalState {
   streamId: string;
   cardId?: string;
+  /** When set, a new card is created as a next-card of this source card. */
+  sourceCardId?: string;
   initialContent?: string;
   initialMetadata?: CardMetadata | null;
   initialMode?: CardEditorMode;

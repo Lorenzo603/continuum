@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { LatestCardTile } from "@/components/LatestCardTile";
+import { LeafCardTile } from "@/components/LeafCardTile";
 import { WorkspaceSidebar } from "@/components/WorkspaceSidebar";
 import { WorkspaceViewNav } from "@/components/WorkspaceViewNav";
 import { AuthControls } from "@/components/AuthControls";
 import { getAuthUserId } from "@/lib/auth";
-import { getLatestCardsByWorkspace } from "@/lib/latestCards";
+import { getLeafCardsByWorkspace } from "@/lib/latestCards";
 import { workspaceIdParamSchema } from "@/lib/validations";
 import { getWorkspaceById } from "@/lib/workspaces";
 
@@ -31,7 +31,7 @@ export default async function LatestCardsPage({ params }: LatestCardsPageProps) 
     notFound();
   }
 
-  const latestCards = await getLatestCardsByWorkspace(workspace.id, userId);
+  const leafCards = await getLeafCardsByWorkspace(workspace.id, userId);
 
   return (
     <main className="flex min-h-screen bg-background">
@@ -66,24 +66,24 @@ export default async function LatestCardsPage({ params }: LatestCardsPageProps) 
 
           <div className="mb-5">
             <h1 id="latest-cards-heading" className="text-xl font-semibold text-foreground">
-              Latest Cards
+              Leaf Cards
             </h1>
             <p className="mt-1 text-sm text-muted">
-              Most recent card per stream, ordered by stream position.
+              All leaf cards per stream, ordered by stream position.
             </p>
           </div>
 
-          {latestCards.length === 0 ? (
+          {leafCards.length === 0 ? (
             <div className="rounded-xl border border-border/50 bg-card/50 p-8 text-center">
-              <h2 className="text-base font-semibold text-foreground">No latest cards yet</h2>
+              <h2 className="text-base font-semibold text-foreground">No leaf cards yet</h2>
               <p className="mt-2 text-sm text-muted">
                 This workspace has no streams with cards. Add a card in any stream to populate this view.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-              {latestCards.map((item) => (
-                <LatestCardTile key={item.streamId} item={item} />
+              {leafCards.map((item) => (
+                <LeafCardTile key={item.card.id} item={item} />
               ))}
             </div>
           )}

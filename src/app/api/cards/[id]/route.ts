@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import { getCardById, updateCard, deleteCard } from "@/lib/cards";
+import { CardLinkError } from "@/lib/cardLinks";
 import { getAuthUserId, unauthorizedJson } from "@/lib/auth";
 import { updateCardSchema } from "@/lib/validations";
+
+function errorResponse(error: unknown, fallback: string) {
+  if (error instanceof CardLinkError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+  const message = error instanceof Error ? error.message : fallback;
+  const status = message.includes("not found") ? 404 : message.includes("has next links") ? 409 : 500;
+  return NextResponse.json({ error: message }, { status });
+}
 
 export async function GET(
   _request: Request,
@@ -55,14 +65,7 @@ export async function PATCH(
     const card = await updateCard(id, userId, parsed.data);
     return NextResponse.json(card, { status: 201 });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to update card";
-    const status = message.includes("not found")
-      ? 404
-      : message.includes("Only the latest")
-        ? 409
-        : 500;
-    return NextResponse.json({ error: message }, { status });
+    return errorResponse(error, "Failed to update card");
   }
 }
 
@@ -80,13 +83,6 @@ export async function DELETE(
     await deleteCard(id, userId);
     return NextResponse.json({ deleted: true });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to delete card";
-    const status = message.includes("not found")
-      ? 404
-      : message.includes("Only the latest")
-        ? 409
-        : 500;
-    return NextResponse.json({ error: message }, { status });
+    return errorResponse(error, "Failed to delete card");
   }
 }

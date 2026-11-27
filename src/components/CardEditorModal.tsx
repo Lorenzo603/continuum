@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import type { CardEditorMode } from "@/stores/uiStore";
 import { useCardUpdate } from "@/hooks/useCardUpdate";
+import { getNewestLeafCard } from "@/lib/cardLayout";
 import { useStreamStore } from "@/stores/streamStore";
 import { useCardStore } from "@/stores/cardStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -28,22 +29,27 @@ function CardEditorModalInner() {
   const prepopulateCardContent = useSettingsStore((s) => s.prepopulateCardContent);
   const { handleUpdate, handleCreate } = useCardUpdate();
 
-  // Derive prepopulated values for new cards
+  // Derive the default source card for a new card. New cards are always
+  // created from an existing card (root exception): when the user branches
+  // from a specific card, use it; otherwise branch from the newest leaf card.
+  // Prepopulation (content/tags) only happens when the setting is enabled.
   const isNewCard = !modal.cardId;
+  const sourceCard = isNewCard && modal.sourceCardId
+    ? (cardsByStream[modal.streamId] ?? []).find((c) => c.id === modal.sourceCardId) ?? null
+    : null;
   const latestCard = (() => {
-    if (!isNewCard || !prepopulateCardContent) return null;
-    const cards = cardsByStream[modal.streamId];
-    if (!cards || cards.length === 0) return null;
-    return [...cards].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )[0];
+    if (!isNewCard) return null;
+    if (sourceCard) return sourceCard;
+    return getNewestLeafCard(cardsByStream[modal.streamId] ?? []);
   })();
+  const effectiveSourceCardId = modal.sourceCardId ?? latestCard?.id;
+  const prefillSource = prepopulateCardContent ? latestCard : null;
 
   const [content, setContent] = useState(
-    modal.initialContent ?? (isNewCard && latestCard ? latestCard.content : ""),
+    modal.initialContent ?? (isNewCard && prefillSource ? prefillSource.content : ""),
   );
   const [tags, setTags] = useState<string[]>(
-    modal.initialMetadata?.tags ?? (isNewCard && latestCard?.metadata?.tags ? latestCard.metadata.tags : []),
+    modal.initialMetadata?.tags ?? (isNewCard && prefillSource?.metadata?.tags ? prefillSource.metadata.tags : []),
   );
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<CardEditorMode>(modal.initialMode ?? "edit");
@@ -89,7 +95,7 @@ function CardEditorModalInner() {
       return;
     }
     setSaving(true);
-    const baseMetadata = modal.initialMetadata ?? (isNewCard && latestCard?.metadata ? latestCard.metadata : undefined);
+    const baseMetadata = modal.initialMetadata ?? (isNewCard && prefillSource?.metadata ? prefillSource.metadata : undefined);
     const metadata = {
       ...baseMetadata,
       tags: tags.length > 0 ? tags : undefined,
@@ -104,7 +110,7 @@ function CardEditorModalInner() {
         );
         toast.success("Card updated");
       } else {
-        await handleCreate(modal.streamId, content.trim(), metadata);
+        await handleCreate(modal.streamId, content.trim(), metadata, effectiveSourceCardId);
         toast.success("Card created");
       }
       closeCardEditor();
@@ -113,7 +119,7 @@ function CardEditorModalInner() {
     } finally {
       setSaving(false);
     }
-  }, [content, tags, modal, isNewCard, latestCard, handleUpdate, handleCreate, closeCardEditor]);
+  }, [content, tags, modal, isNewCard, prefillSource, effectiveSourceCardId, handleUpdate, handleCreate, closeCardEditor]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -140,7 +146,7 @@ function CardEditorModalInner() {
             </h2>
             <p className="text-xs text-muted truncate mt-0.5">
               {streamTitle}
-              {isEditing && " · Saving creates a new version"}
+              {isEditing && " · Editing saves this card in place"}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -214,7 +220,7 @@ function CardEditorModalInner() {
                 disabled={saving || !content.trim()}
                 className="cursor-pointer rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
-                {saving ? "Saving…" : isEditing ? "Save New Version" : "Create Card"}
+                {saving ? "Saving…" : isEditing ? "Save Card" : "Create Card"}
               </button>
             )}
           </div>

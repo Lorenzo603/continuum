@@ -48,10 +48,10 @@ Default dev requires a PostgreSQL database; set `DATABASE_URL` in `.env` (see `.
 ## Testing
 
 Vitest-based suite; see `tests/README.md` for details and DB-safety guarantees.
-- `tests/unit/**` � pure logic (validations, lib failure paths, Zustand stores with mocked fetch). No DB/network.
-- `tests/integration/**` � real Drizzle + Postgres via `.env` `DATABASE_URL`. Each test creates a dedicated `test-integration-*` workspace for an `it-user-*` user and deletes it in `afterEach` (cascade verifies child cleanup). Never touches existing data.
+- `tests/unit/**` — pure logic (validations, lib failure paths, Zustand stores with mocked fetch). No DB/network.
+- `tests/integration/**` — real Drizzle + Postgres via `.env` `DATABASE_URL`. Each test creates a dedicated `test-integration-*` workspace for an `it-user-*` user and deletes it in `afterEach` (cascade verifies child cleanup). Never touches existing data.
 - Configs: `vitest.config.ts` (unit), `vitest.integration.config.ts` (integration; loads `.env`).
-- `tests/ui/**` � optional Playwright smoke suite against the app in normal Clerk mode (see `tests/README.md`). Requires `PLAYWRIGHT_CLERK_EMAIL` / `PLAYWRIGHT_CLERK_PASSWORD` and a dedicated Clerk Dev test user; browsers via `npx playwright install chromium`.
+- `tests/ui/**` — optional Playwright smoke suite against the app in normal Clerk mode (see `tests/README.md`). Requires `PLAYWRIGHT_CLERK_EMAIL` / `PLAYWRIGHT_CLERK_PASSWORD` and a dedicated Clerk Dev test user; browsers via `npx playwright install chromium`.
 
 ## Environment Variables
 
@@ -114,7 +114,11 @@ src/
 ### Domain Model
 
 - **Workspace** → contains many **Streams** (hierarchical, with `parentStreamId`)
-- **Stream** → contains many **Cards** (versioned, append-only by design)
+- **Stream** → contains many **Cards** organized as a DAG via the **`card_links`** join table
+- **card_links** (`sourceCardId` → `targetCardId`) is the single source of truth for "next"/"previous". There is no `version` column and no separate "previous" column — "B is previous-of A" is derived from the reverse join (`targetCardId = A`). Links connect cards within the SAME stream only; self-links, cross-stream links, duplicates and cycles are rejected server-side (cycles are detected by DFS from the target along outgoing edges).
+- A card is a **leaf** iff it has zero outgoing links. `isEditable` is the cached leaf flag (kept in sync by card creation/deletion and link add/remove). A stream has exactly ONE root card (the first card ever created) — every other card is created from an existing card via a `sourceCardId` link.
+- A "branch here" affordance creates a new next-card from ANY card (not just leaves).
+- Only leaf (editable) cards can be edited or deleted; deleting a leaf card cascades its links and re-marks any card whose outgoing links were entirely to the deleted card as editable again.
 - Cards have `metadata` (JSON): `status`, `tags`, `dueDate`
 - Card statuses: `in-progress`, `action-required`, `to-update`, `waiting`, `monitor`, `completed`, `backlog`
 
@@ -124,13 +128,17 @@ src/
 - Drizzle config at `drizzle.config.ts` always uses the PostgreSQL dialect.
 - `src/db/index.ts` exports a single PostgreSQL-backed `db`, `workspaces`, `streams`, `cards` — typed as `any`.
 - IDs are UUIDs (generated with `uuid` v4).
-- Migrations in `drizzle/pg/`.
+- Migrations in `drizzle/pg/` (hand-written-style SQL with journal entries; `drizzle-kit generate` does not work against the current `drizzle/pg/meta` baseline).
 
 ### API Routes
 
 - RESTful JSON API under `src/app/api/`.
 - All input validated with Zod schemas from `src/lib/validations.ts`.
 - Lookup/resolve endpoints: `GET /api/workspaces/resolve?name=...` and `GET /api/streams/resolve?title=...&workspaceId=...`.
+- **Card creation** `POST /api/cards` accepts `{ streamId, content, metadata?, sourceCardId? }` — `sourceCardId` is REQUIRED unless the stream is empty (the root-card exception). The source card loses leaf status and is marked completed; the new card is a leaf (isEditable: true).
+- **Link endpoints**: `POST /api/cards/:id/next` (body `{ targetCardId }`; returns the updated source card, 201) and `DELETE /api/cards/:id/next/:targetId` (removes the link, re-marking the source editable if it has no outgoing links; returns the updated source card). Both return the card with resolved `previousCards`/`nextCards` arrays ordered by createdAt then id.
+- Card GET/PATCH responses include resolved `previousCards`/`nextCards` arrays (ordered by createdAt, then id).
+- Error contract: 400 validation (self/cross-stream/cycle/duplicate/missing source/not leaf), 404 missing/unowned card or stream, 401 unauthorized, 500 unexpected (no stack traces).
 - Clerk middleware protects all app/API routes (excluding static assets and auth routes).
 - Workspace/stream/card API handlers enforce per-user ownership via Clerk `userId` filtering.
 

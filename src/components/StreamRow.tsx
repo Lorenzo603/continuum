@@ -7,43 +7,8 @@ import { useUIStore } from "@/stores/uiStore";
 import { CardItem } from "./CardItem";
 import { NewStreamForm } from "./NewStreamForm";
 import { StreamCardsModal } from "./StreamCardsModal";
-import type { StreamNode, Card } from "@/types";
-
-/**
- * Compact indicator for older card versions, opens the full history modal.
- */
-function OlderVersionsIndicator({
-  count,
-  allCards,
-  streamTitle,
-}: {
-  count: number;
-  allCards: Card[];
-  streamTitle: string;
-}) {
-  const [showModal, setShowModal] = useState(false);
-
-  return (
-    <>
-      <button
-        onClick={() => setShowModal(true)}
-        className="flex-shrink-0 self-stretch flex items-center rounded-lg px-4 text-xs text-muted transition-colors hover:text-primary hover:bg-surface cursor-pointer"
-      >
-        <span className="whitespace-nowrap">
-          +{count} older {count === 1 ? "version" : "versions"}
-        </span>
-      </button>
-
-      {showModal && (
-        <StreamCardsModal
-          streamTitle={streamTitle}
-          cards={allCards}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-    </>
-  );
-}
+import { buildCardTree, flattenCardTree } from "@/lib/cardLayout";
+import type { StreamNode } from "@/types";
 
 interface StreamRowProps {
   stream: StreamNode;
@@ -79,6 +44,9 @@ export const StreamRow = memo(function StreamRow({
     }
     setIsEditingTitle(false);
   };
+
+  // Cards grouped into a tree by their previous card — siblings stack vertically.
+  const layoutRows = flattenCardTree(buildCardTree(cards));
 
   return (
     <div className="group">
@@ -182,57 +150,53 @@ export const StreamRow = memo(function StreamRow({
         </div>
       </div>
 
-      {/* Cards row - drag to scroll */}
-      <div
-        className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-none"
-      >
+      {/* Cards — tree with siblings stacked vertically under their parent */}
+      <div className="flex flex-col gap-2 pb-1">
         {loading && cards.length === 0 ? (
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-2">
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-28 w-72 animate-pulse rounded-lg bg-surface flex-shrink-0"
+                className="h-28 w-72 animate-pulse rounded-lg bg-surface self-start"
               />
             ))}
           </div>
+        ) : cards.length === 0 ? (
+          <p className="text-xs text-muted italic py-1">
+            No cards yet — create the root card to get started.
+          </p>
         ) : (
           <>
-            {/* Collapsed card stack (cards beyond the last 3) */}
-            {cards.length > 3 && (
-              <OlderVersionsIndicator
-                count={cards.length - 3}
-                allCards={cards}
-                streamTitle={stream.title}
-              />
-            )}
-
-            {/* Visible cards (last 3, or all if ≤ 3) */}
-            {(cards.length > 3 ? cards.slice(-3) : cards).map((card) => (
-              <CardItem
+            {layoutRows.map(({ card, depth }) => (
+              <div
                 key={card.id}
-                card={card}
-                streamId={stream.id}
-                onViewAll={() => { setModalInitialCardId(card.id); setShowCardsModal(true); }}
-              />
+                className="self-start"
+                style={{ marginLeft: depth * 28 }}
+              >
+                <CardItem
+                  card={card}
+                  streamId={stream.id}
+                  onViewAll={() => { setModalInitialCardId(card.id); setShowCardsModal(true); }}
+                />
+              </div>
             ))}
-
+            {cards.length > 1 && (
+              <button
+                onClick={() => setShowCardsModal(true)}
+                className="self-start cursor-pointer rounded px-2.5 py-1 text-xs text-muted transition-colors hover:text-primary hover:bg-surface"
+                title="View all cards"
+              >
+                View all {cards.length} cards →
+              </button>
+            )}
             <button
               onClick={() => openCardEditor({ streamId: stream.id })}
-              className="flex min-h-[60px] min-w-[60px] flex-shrink-0 self-stretch items-center justify-center rounded-lg border border-dashed border-border/40 text-muted/40 transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
+              className="self-start flex items-center gap-2 rounded-lg border border-dashed border-border/40 px-3 py-2 text-xs text-muted transition-colors hover:border-primary/30 hover:text-primary cursor-pointer"
             >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4v16m8-8H4"
-                />
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
+              New card
             </button>
           </>
         )}

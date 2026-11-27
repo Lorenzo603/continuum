@@ -8,7 +8,7 @@ export function EmptyState({ onCreateStream }: EmptyStateProps) {
       <h2 className="text-2xl font-bold tracking-tight">Start your first stream</h2>
       <p className="mt-3 text-sm text-muted leading-relaxed">
         A stream is a living timeline of your work. Each update becomes a new
-        card while every previous version is preserved — so nothing is ever lost.
+        card while every previous card is preserved — so nothing is ever lost.
       </p>
       <button
         onClick={onCreateStream}

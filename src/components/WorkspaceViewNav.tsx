@@ -35,7 +35,7 @@ export function WorkspaceViewNav({ workspaceId }: WorkspaceViewNavProps) {
             : "border-border/60 bg-card text-muted hover:text-foreground"
         }`}
       >
-        Latest Cards
+        Leaf Cards
       </Link>
     </nav>
   );

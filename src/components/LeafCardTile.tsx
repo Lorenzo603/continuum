@@ -1,4 +1,4 @@
-import type { LatestCardByStream } from "@/lib/latestCards";
+import type { LeafCardByStream } from "@/lib/latestCards";
 import { CARD_STATUSES, type CardStatus } from "@/types";
 
 const STATUS_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
@@ -27,8 +27,8 @@ function formatCardDate(value: string): string {
   });
 }
 
-interface LatestCardTileProps {
-  item: LatestCardByStream;
+interface LeafCardTileProps {
+  item: LeafCardByStream;
 }
 
 function StatusBadge({ status }: { status: CardStatus }) {
@@ -47,27 +47,27 @@ function StatusBadge({ status }: { status: CardStatus }) {
   );
 }
 
-export function LatestCardTile({ item }: LatestCardTileProps) {
-  const status = item.latestCard.metadata?.status;
+export function LeafCardTile({ item }: LeafCardTileProps) {
+  const status = item.card.metadata?.status;
 
   return (
     <article className="mb-4 break-inside-avoid rounded-xl border border-border/50 bg-card/70 p-4 shadow-sm">
       <header className="border-b border-border/40 pb-3">
         <h2 className="text-base font-semibold text-foreground break-words">{item.streamTitle}</h2>
         <div className="mt-2 flex items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium text-muted">
-            v{item.latestCard.version}
+          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            Leaf
           </span>
           {status ? <StatusBadge status={status} /> : null}
         </div>
       </header>
 
       <p className="pt-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
-        {item.latestCard.content.trim() || "No content yet"}
+        {item.card.content.trim() || "No content yet"}
       </p>
 
       <footer className="mt-3 border-t border-border/30 pt-2 text-[10px] text-muted">
-        {formatCardDate(item.latestCard.createdAt)}
+        {formatCardDate(item.card.createdAt)}
       </footer>
     </article>
   );
